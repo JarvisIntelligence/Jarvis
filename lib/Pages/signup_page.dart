@@ -19,7 +19,7 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
-
+  int _currentPageIndex = 0;
 
   final _controller = PageController(
       initialPage: 0
@@ -39,257 +39,275 @@ class _SignupPageState extends State<SignupPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: const Color(0xFF202325),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.only(top: 100,),
-          child: Column(
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: SvgPicture.asset(
-                    'assets/icons/logo.svg',
-                    width: 118,
-                    height: 48,
+        body: PopScope(
+          canPop: false,
+          onPopInvoked: (didPop){
+            if (_currentPageIndex == 0){
+              context.pop();
+            } else {
+              _controller.previousPage(
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOut
+              );
+            }
+          },
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(top: 100,),
+            child: Column(
+                children: [
+                  Align(
+                    alignment: Alignment.center,
+                    child: SvgPicture.asset(
+                      'assets/icons/logo.svg',
+                      width: 118,
+                      height: 48,
+                    ),
                   ),
-                ),
-                const SizedBox(
-                  height: 70,
-                ),
-                SizedBox(
-                  height: 385,
-                  child: PageView(
-                    controller: _controller,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 30),
-                        child: Column(
-                          children: [
-                            const Text('Create an Account', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
-                            const SizedBox(height: 5,),
-                            const Text('Enter your email to signup for this app', style: TextStyle(fontSize: 14, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
-                            const SizedBox(
-                              height: 30,
-                            ),
-                            CustomTextField(controller: _emailController, labelText: 'email@domain.com', obscureText: false,),
-                            const SizedBox(
-                              height: 15,
-                            ),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: (){
-                                  _controller.animateToPage(
-                                      1,
-                                      duration: const Duration(milliseconds: 500),
-                                      curve: Curves.easeInOut
-                                  );
-                                },
-                                style: ButtonStyle(
-                                  shape: WidgetStateProperty.all<OutlinedBorder>(
-                                    RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.32), // BorderRadius
-                                    ),
-                                  ),
-                                  backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
-                                  fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
-                                ),
-                                child: const Text("Sign up with email", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+                  const SizedBox(
+                    height: 70,
+                  ),
+                  SizedBox(
+                    height: 385,
+                    child: PageView(
+                      controller: _controller,
+                      onPageChanged: (int page) {
+                        setState(() {
+                          _currentPageIndex = page;
+                        });
+                      },
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 30),
+                          child: Column(
+                            children: [
+                              const Text('Create an Account', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
+                              const SizedBox(height: 5,),
+                              const Text('Enter your email to signup for this app', style: TextStyle(fontSize: 14, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
+                              const SizedBox(
+                                height: 30,
                               ),
-                            ),
-                            const SizedBox(
-                              height: 25,
-                            ),
-                            SizedBox(
-                              width: double.infinity,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                      child: Container(
-                                        color: const Color(0xFFCDCFD0),
-                                        height: 1,
-                                      )
-                                  ),
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 10),
-                                    child: Text('or continue with', style: TextStyle(color: Color(0xFF979C9E), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
-                                  ),
-                                  Expanded(
-                                      child: Container(
-                                        color: const Color(0xFFCDCFD0),
-                                        height: 1,
-                                      )
-                                  ),
-                                ],
+                              CustomTextField(controller: _emailController, labelText: 'email@domain.com', obscureText: false,),
+                              const SizedBox(
+                                height: 15,
                               ),
-                            ),
-                            const SizedBox(
-                              height: 25,
-                            ),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                  onPressed: (){},
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: (){
+                                    _controller.animateToPage(
+                                        1,
+                                        duration: const Duration(milliseconds: 500),
+                                        curve: Curves.easeInOut
+                                    );
+                                  },
                                   style: ButtonStyle(
                                     shape: WidgetStateProperty.all<OutlinedBorder>(
                                       RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8.32), // BorderRadius
                                       ),
                                     ),
-                                    backgroundColor: WidgetStateProperty.all(Colors.white),
+                                    backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
                                     fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
                                   ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SvgPicture.asset(
-                                        'assets/icons/google.svg',
-                                      ),
-
-                                      const SizedBox(width: 8.32,),
-                                      const Text("Google", style: TextStyle(color: Color(0xFF404446), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
-                                    ],
-                                  )
+                                  child: const Text("Sign up with email", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+                                ),
                               ),
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            Center(
-                              child: RichText(
-                                text: TextSpan(
-                                  text: "If you already have an account ",
-                                  style: const TextStyle(
-                                      color: Color(0xFF828282), fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w400
-                                  ),
-                                  children: <TextSpan>[
-                                    TextSpan(
-                                      text: ' Log in here',
-                                      style: const TextStyle(
-                                          color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic
-                                      ),
-                                      recognizer: TapGestureRecognizer()
-                                        ..onTap = () {
-                                          // Handle the tap
-                                          context.go('/auth/login');
-                                          // You can navigate to the sign-up page or perform any action here
-                                        },
+                              const SizedBox(
+                                height: 25,
+                              ),
+                              SizedBox(
+                                width: double.infinity,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                        child: Container(
+                                          color: const Color(0xFFCDCFD0),
+                                          height: 1,
+                                        )
+                                    ),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 10),
+                                      child: Text('or continue with', style: TextStyle(color: Color(0xFF979C9E), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
+                                    ),
+                                    Expanded(
+                                        child: Container(
+                                          color: const Color(0xFFCDCFD0),
+                                          height: 1,
+                                        )
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            RichText(
-                              textAlign: TextAlign.center,
-                              text: TextSpan(
-                                  text: 'By clicking continue, you agree to our ',
-                                  style: const TextStyle(color: Color(0xFF828282), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, height: 1.3),
-                                  children: <TextSpan>[
-                                    TextSpan(
-                                      text: 'Terms of Service',
-                                      style: const TextStyle(color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
-                                      recognizer: TapGestureRecognizer()
-                                        ..onTap = () {
-                                          // Handle the tap
-                                          // You can navigate to the sign-up page or perform any action here
-                                        },
-                                    ),
-                                    const TextSpan(
-                                      text: ' and ',
-                                      style: TextStyle(color: Color(0xFF828282), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400),
-                                    ),
-                                    TextSpan(
-                                      text: 'Privacy Policy',
-                                      style: const TextStyle(color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
-                                      recognizer: TapGestureRecognizer()
-                                        ..onTap = () {
-                                          // Handle the tap
-                                          // You can navigate to the sign-up page or perform any action here
-                                        },
-                                    )
-                                  ]
+                              const SizedBox(
+                                height: 25,
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 30),
-                        child: Column(
-                          children: [
-                            const Text('Enter Personal Details', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
-                            const SizedBox(height: 30,),
-                            CustomTextField(controller: _usernameController, labelText: 'Username', obscureText: false),
-                            const SizedBox(height: 20,),
-                            CustomTextField(controller: _fullNameController, labelText: 'Full Name', obscureText: false),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: (){
-                                  _controller.animateToPage(
-                                      2,
-                                      duration: const Duration(milliseconds: 500),
-                                      curve: Curves.easeInOut
-                                  );
-                                },
-                                style: ButtonStyle(
-                                  shape: WidgetStateProperty.all<OutlinedBorder>(
-                                    RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.32), // BorderRadius
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                    onPressed: (){},
+                                    style: ButtonStyle(
+                                      shape: WidgetStateProperty.all<OutlinedBorder>(
+                                        RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8.32), // BorderRadius
+                                        ),
+                                      ),
+                                      backgroundColor: WidgetStateProperty.all(Colors.white),
+                                      fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
                                     ),
-                                  ),
-                                  backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
-                                  fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
-                                ),
-                                child: const Text("Proceed", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 30),
-                        child: Column(
-                          children: [
-                            const Text('Create Password', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
-                            const SizedBox(height: 30,),
-                            CustomTextField(controller: _passwordController, labelText: 'Enter Password', obscureText: true),
-                            const SizedBox(height: 20,),
-                            CustomTextField(controller: _confirmPasswordController, labelText: 'Confirm Password', obscureText: true),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: (){
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        SvgPicture.asset(
+                                          'assets/icons/google.svg',
+                                        ),
 
-                                },
-                                style: ButtonStyle(
-                                  shape: WidgetStateProperty.all<OutlinedBorder>(
-                                    RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.32), // BorderRadius
-                                    ),
-                                  ),
-                                  backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
-                                  fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
+                                        const SizedBox(width: 8.32,),
+                                        const Text("Google", style: TextStyle(color: Color(0xFF404446), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+                                      ],
+                                    )
                                 ),
-                                child: const Text("Finish", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
                               ),
-                            ),
-                          ],
+                              const SizedBox(
+                                height: 20,
+                              ),
+                              Center(
+                                child: RichText(
+                                  text: TextSpan(
+                                    text: "If you already have an account ",
+                                    style: const TextStyle(
+                                        color: Color(0xFF828282), fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w400
+                                    ),
+                                    children: <TextSpan>[
+                                      TextSpan(
+                                        text: ' Log in here',
+                                        style: const TextStyle(
+                                            color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic
+                                        ),
+                                        recognizer: TapGestureRecognizer()
+                                          ..onTap = () {
+                                            // Handle the tap
+                                            context.go('/auth/login');
+                                            // You can navigate to the sign-up page or perform any action here
+                                          },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 20,
+                              ),
+                              RichText(
+                                textAlign: TextAlign.center,
+                                text: TextSpan(
+                                    text: 'By clicking continue, you agree to our ',
+                                    style: const TextStyle(color: Color(0xFF828282), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, height: 1.3),
+                                    children: <TextSpan>[
+                                      TextSpan(
+                                        text: 'Terms of Service',
+                                        style: const TextStyle(color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
+                                        recognizer: TapGestureRecognizer()
+                                          ..onTap = () {
+                                            // Handle the tap
+                                            // You can navigate to the sign-up page or perform any action here
+                                          },
+                                      ),
+                                      const TextSpan(
+                                        text: ' and ',
+                                        style: TextStyle(color: Color(0xFF828282), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400),
+                                      ),
+                                      TextSpan(
+                                        text: 'Privacy Policy',
+                                        style: const TextStyle(color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
+                                        recognizer: TapGestureRecognizer()
+                                          ..onTap = () {
+                                            // Handle the tap
+                                            // You can navigate to the sign-up page or perform any action here
+                                          },
+                                      )
+                                    ]
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 30),
+                          child: Column(
+                            children: [
+                              const Text('Enter Personal Details', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
+                              const SizedBox(height: 30,),
+                              CustomTextField(controller: _usernameController, labelText: 'Username', obscureText: false),
+                              const SizedBox(height: 20,),
+                              CustomTextField(controller: _fullNameController, labelText: 'Full Name', obscureText: false),
+                              const SizedBox(
+                                height: 20,
+                              ),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: (){
+                                    _controller.animateToPage(
+                                        2,
+                                        duration: const Duration(milliseconds: 500),
+                                        curve: Curves.easeInOut
+                                    );
+                                  },
+                                  style: ButtonStyle(
+                                    shape: WidgetStateProperty.all<OutlinedBorder>(
+                                      RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8.32), // BorderRadius
+                                      ),
+                                    ),
+                                    backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
+                                    fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
+                                  ),
+                                  child: const Text("Proceed", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 30),
+                          child: Column(
+                            children: [
+                              const Text('Create Password', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
+                              const SizedBox(height: 30,),
+                              CustomTextField(controller: _passwordController, labelText: 'Enter Password', obscureText: true),
+                              const SizedBox(height: 20,),
+                              CustomTextField(controller: _confirmPasswordController, labelText: 'Confirm Password', obscureText: true),
+                              const SizedBox(
+                                height: 20,
+                              ),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: (){
+                                    context.go('/homepage');
+                                  },
+                                  style: ButtonStyle(
+                                    shape: WidgetStateProperty.all<OutlinedBorder>(
+                                      RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8.32), // BorderRadius
+                                      ),
+                                    ),
+                                    backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
+                                    fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
+                                  ),
+                                  child: const Text("Finish", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 50,)
-              ]
+                  const SizedBox(height: 50,)
+                ]
+            ),
           ),
         )
     );

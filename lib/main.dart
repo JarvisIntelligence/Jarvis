@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jarvis_app/Components/chat.dart';
 import 'package:jarvis_app/Pages/auth_page.dart';
 import 'package:jarvis_app/Pages/login_page.dart';
 import 'package:jarvis_app/Pages/signup_page.dart';
+import 'package:jarvis_app/Pages/home_page.dart';
+import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,8 +18,24 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
+_resetStyle() {
+  InAppNotifications.instance
+    ..titleFontSize = 14.0
+    ..descriptionFontSize = 14.0
+    ..textColor = Colors.white
+    ..backgroundColor = const Color(0xFF5538EE)
+    ..shadow = true
+    ..animationStyle = InAppNotificationsAnimationStyle.scale;
+}
+
+
 class _MyAppState extends State<MyApp> {
   // This widget is the root of your application.
+  @override
+  void initState() {
+    super.initState();
+    _resetStyle();
+  }
   final GoRouter _router = GoRouter(
     initialLocation: '/auth',
     routes: <RouteBase>[
@@ -39,6 +58,24 @@ class _MyAppState extends State<MyApp> {
             },
           ),
         ]
+      ),
+      GoRoute(
+        path: '/homepage',
+        builder: (BuildContext context, GoRouterState state) {
+          return const HomePage();
+        },
+        routes: <RouteBase>[
+          GoRoute(
+            path: 'chat/:name/:boolValue/:image1Value/:image2Value',
+            builder: (BuildContext context, GoRouterState state) {
+              final String name = state.pathParameters['name']!;
+              final String image1Value = Uri.decodeComponent(state.pathParameters['image1Value']!);
+              final String image2Value = Uri.decodeComponent(state.pathParameters['image2Value']!);
+              final bool isGroup = state.pathParameters['boolValue'] == 'true';
+              return Chat(chatName: name, isGroup: isGroup, userImage: image1Value, userImage2: image2Value,);
+            },
+          ),
+        ]
       )
     ]
   );
@@ -47,6 +84,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       routerConfig: _router,
+      builder: InAppNotifications.init(),
     );
   }
 }

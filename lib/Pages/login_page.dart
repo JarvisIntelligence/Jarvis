@@ -53,6 +53,7 @@ class _LoginPageState extends State<LoginPage> {
                   height: 500,
                   child:  PageView(
                     controller: _controller,
+                    physics: const NeverScrollableScrollPhysics(),
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -94,7 +95,9 @@ class _LoginPageState extends State<LoginPage> {
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
-                                onPressed: (){},
+                                onPressed: (){
+                                  context.go('/homepage');
+                                },
                                 style: ButtonStyle(
                                   shape: WidgetStateProperty.all<OutlinedBorder>(
                                     RoundedRectangleBorder(

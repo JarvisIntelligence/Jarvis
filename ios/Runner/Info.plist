@@ -4,6 +4,8 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSMicrophoneUsageDescription</key>
+    <string>We need your microphone to recognize your speech.</string>
 	<key>CFBundleDisplayName</key>
 	<string>Jarvis App</string>
 	<key>CFBundleExecutable</key>
