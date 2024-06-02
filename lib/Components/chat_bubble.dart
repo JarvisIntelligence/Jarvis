@@ -4,17 +4,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class ChatBubble extends StatelessWidget {
-  const ChatBubble({super.key, required this.message, required this.isSender, required this.chatName, required this.isGroup});
+  const ChatBubble({super.key, required this.message,
+    required this.isSender, required this.chatName,
+    required this.isGroup, required this.chatTime,
+    required this.senderName, required this.isDelivered,
+    required this.isSent, required this.hasDifferentSender
+  });
 
   final bool isSender;
+  final String senderName;
   final String message;
   final String chatName;
   final bool isGroup;
+  final bool isDelivered;
+  final bool isSent;
+  final String chatTime;
+  final bool hasDifferentSender;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 10, bottom: 10),
+      padding: EdgeInsets.only(top: 5, bottom: (hasDifferentSender) ? 20 : 0),
       child: Column(
         children: [
           Row(
@@ -23,7 +33,7 @@ class ChatBubble extends StatelessWidget {
             children: (isSender)
                 ?
             [
-              const Text('9:05 AM', style: TextStyle(color: Color(0xFF979C9E), fontSize: 10),),
+              Text(chatTime, style: const TextStyle(color: Color(0xFF979C9E), fontSize: 10),),
               Column(
                 children: [
                   BubbleSpecialThree(
@@ -34,8 +44,8 @@ class ChatBubble extends StatelessWidget {
                     text: message,
                     tail: true,
                     isSender: isSender,
-                    delivered: true,
-                    sent: false,
+                    delivered: isDelivered,
+                    sent: isSent,
                     color: (isSender) ? const Color(0xFF5538EE) : const Color(0xFF303437),
                     textStyle: const TextStyle(
                         color: Color(0xFFFFFFFF),
@@ -96,7 +106,7 @@ class ChatBubble extends StatelessWidget {
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w400
                 ),
-                userName: (isGroup) ? chatName : null,
+                userName: (isGroup) ? senderName : null,
                 userNameTextStyle: const TextStyle(
                     color: Color(0xFF979C9E),
                     fontSize: 12,
@@ -104,7 +114,7 @@ class ChatBubble extends StatelessWidget {
                     fontWeight: FontWeight.w400
                 ),
               ),
-              const Text('9:05 AM', style: TextStyle(color: Color(0xFF979C9E), fontSize: 10),),
+              Text(chatTime, style: const TextStyle(color: Color(0xFF979C9E), fontSize: 10),),
             ],
           ),
           (isSender) ? const SizedBox() : Padding(

@@ -95,7 +95,7 @@ class _LoginPageState extends State<LoginPage> {
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
-                                onPressed: (){
+                                onPressed: () async {
                                   context.go('/homepage');
                                 },
                                 style: ButtonStyle(

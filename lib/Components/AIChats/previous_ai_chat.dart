@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 class PreviousAiChat extends StatelessWidget {
-  const PreviousAiChat({super.key, required this.chatName, required this.isNewChat});
+  const PreviousAiChat({super.key,
+    required this.chatName, required this.isNewChat,
+    required this.switchShowShareDeleteAiChat
+  });
 
   final String chatName;
   final bool isNewChat;
+  final Function switchShowShareDeleteAiChat;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +34,7 @@ class PreviousAiChat extends StatelessWidget {
                     ),
                     const SizedBox(width: 20,),
                     SizedBox(
-                      width: 200, // Set the desired width
+                      width: 150, // Set the desired width
                       child: Text(
                         chatName,
                         style: TextStyle(
@@ -43,7 +47,6 @@ class PreviousAiChat extends StatelessWidget {
                         maxLines: 1,
                       ),
                     )
-
                   ],
                 ),
                 Row(
@@ -51,7 +54,9 @@ class PreviousAiChat extends StatelessWidget {
                     Visibility(
                       visible: (isNewChat) ? false : true,
                       child: IconButton(
-                          onPressed: (){},
+                          onPressed: (){
+                            switchShowShareDeleteAiChat();
+                          },
                           icon: const Icon(Icons.more_vert, size: 20, color: Color(0xFFFFFFFF),)
                       ),
                     ),

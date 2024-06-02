@@ -8,7 +8,7 @@ class HomeChat extends StatefulWidget {
     required this.notification, required this.userImage,
     required this.userImage2,
     required this.name, required this.lastMessage,
-    required this.lastMessageTime, required this.isGroup});
+    required this.lastMessageTime, required this.isGroup, required this.id});
   
   final bool notification;
   final bool isGroup;
@@ -17,6 +17,7 @@ class HomeChat extends StatefulWidget {
   final String name;
   final String lastMessage;
   final DateTime lastMessageTime;
+  final String id;
 
   @override
   State<HomeChat> createState() => _HomeChatState();
@@ -43,9 +44,9 @@ class _HomeChatState extends State<HomeChat> {
       child: GestureDetector(
         onTap: () async {
           if (encodedUserImage2 == ''){
-            context.go('/homepage/chat/${widget.name}/${widget.isGroup}/$encodedUserImage/_'); //prevents a null value being passed to the route and thus making it not found
+            context.go('/homepage/chat/${widget.name}/${widget.isGroup}/$encodedUserImage/_/${widget.id}'); //prevents a null value being passed to the route and thus making it not found
           } else {
-            context.go('/homepage/chat/${widget.name}/${widget.isGroup}/$encodedUserImage/$encodedUserImage2');
+            context.go('/homepage/chat/${widget.name}/${widget.isGroup}/$encodedUserImage/$encodedUserImage2/${widget.id}');
           }
         },
         child:  Column(

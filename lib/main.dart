@@ -12,7 +12,7 @@ void main() {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -28,57 +28,71 @@ _resetStyle() {
     ..animationStyle = InAppNotificationsAnimationStyle.scale;
 }
 
-
 class _MyAppState extends State<MyApp> {
-  // This widget is the root of your application.
+  late GoRouter _router;
+
   @override
   void initState() {
     super.initState();
     _resetStyle();
+    _router = _configureRouter();
   }
-  final GoRouter _router = GoRouter(
-    initialLocation: '/auth',
-    routes: <RouteBase>[
-      GoRoute (
-        path: '/auth',
-        builder: (BuildContext context, GoRouterState state) {
-          return const AuthPage();
-        },
-        routes: <RouteBase>[
-          GoRoute(
-            path: 'login',
-            builder: (BuildContext context, GoRouterState state) {
-              return const LoginPage();
-            },
-          ),
-          GoRoute(
-            path: 'signup',
-            builder: (BuildContext context, GoRouterState state) {
-              return const SignupPage();
-            },
-          ),
-        ]
-      ),
-      GoRoute(
-        path: '/homepage',
-        builder: (BuildContext context, GoRouterState state) {
-          return const HomePage();
-        },
-        routes: <RouteBase>[
-          GoRoute(
-            path: 'chat/:name/:boolValue/:image1Value/:image2Value',
-            builder: (BuildContext context, GoRouterState state) {
-              final String name = state.pathParameters['name']!;
-              final String image1Value = Uri.decodeComponent(state.pathParameters['image1Value']!);
-              final String image2Value = Uri.decodeComponent(state.pathParameters['image2Value']!);
-              final bool isGroup = state.pathParameters['boolValue'] == 'true';
-              return Chat(chatName: name, isGroup: isGroup, userImage: image1Value, userImage2: image2Value,);
-            },
-          ),
-        ]
-      )
-    ]
-  );
+
+  GoRouter _configureRouter() {
+    return GoRouter(
+      initialLocation: '/auth',
+      routes: <RouteBase>[
+        GoRoute(
+          path: '/auth',
+          builder: (BuildContext context, GoRouterState state) {
+            return const AuthPage();
+          },
+          routes: <RouteBase>[
+            GoRoute(
+              path: 'login',
+              builder: (BuildContext context, GoRouterState state) {
+                return const LoginPage();
+              },
+            ),
+            GoRoute(
+              path: 'signup',
+              builder: (BuildContext context, GoRouterState state) {
+                return const SignupPage();
+              },
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/homepage',
+          builder: (BuildContext context, GoRouterState state) {
+            return const HomePage();
+          },
+          routes: <RouteBase>[
+            GoRoute(
+              path: 'chat/:name/:boolValue/:image1Value/:image2Value/:id',
+              builder: (BuildContext context, GoRouterState state) {
+                final String name = state.pathParameters['name']!;
+                final String image1Value =
+                Uri.decodeComponent(state.pathParameters['image1Value']!);
+                final String image2Value =
+                Uri.decodeComponent(state.pathParameters['image2Value']!);
+                final bool isGroup = state.pathParameters['boolValue'] == 'true';
+                final String id = state.pathParameters['id']!;
+                return Chat(
+                  chatName: name,
+                  isGroup: isGroup,
+                  userImage: image1Value,
+                  userImage2: image2Value,
+                  id: id
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
@@ -88,3 +102,4 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
+

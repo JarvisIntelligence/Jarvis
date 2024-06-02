@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:jarvis_app/Components/textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:jarvis_app/Components/Utilities/encrypter.dart';
 
 
 class SignupPage extends StatefulWidget {
@@ -20,10 +21,108 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _confirmPasswordController = TextEditingController();
 
   int _currentPageIndex = 0;
-
   final _controller = PageController(
       initialPage: 0
   );
+  List<Map<String, dynamic>> userChatList = [
+    {
+      'notification': true,
+      'id': '1',
+      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/joe_smith.jpg',
+      'name': 'Stephen Yustiono',
+      'lastMessage': "I don't know why people are so anti pineapple pizza. I kind of like it.",
+      'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
+      'isGroup': false,
+      'userImage2': '',
+    },
+    {
+      'notification': false,
+      'id': '2',
+      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/cody_fisher.jpg',
+      'name': 'Stephen Yustiono',
+      'lastMessage': "There's no way you'll be able to jump your motorcycle over that bus.",
+      'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
+      'isGroup': false,
+      'userImage2': '',
+    },
+    {
+      'notification': false,
+      'id': '3',
+      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/joe_smith.jpg',
+      'name': 'Stephen & Fisher',
+      'lastMessage': "I don't know why people are so anti pineapple pizza. I kind of like it.",
+      'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
+      'isGroup': true,
+      'userImage2': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/cody_fisher.jpg',
+    },
+    {
+      'notification': true,
+      'id': '4',
+      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/joe_smith.jpg',
+      'name': 'Stephen Yustiono',
+      'lastMessage': "Tabs make way more sense than spaces. Convince me I'm wrong. LOL.",
+      'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
+      'isGroup': false,
+      'userImage2': '',
+    },
+    {
+      'notification': false,
+      'id': '5',
+      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/jenifier_lopez.jpg',
+      'name': 'Jennifer Lopez',
+      'lastMessage': "I don't know why people are so anti pineapple pizza. I kind of like it.",
+      'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
+      'isGroup': false,
+      'userImage2': '',
+    },
+    {
+      'notification': false,
+      'id': '6',
+      'userImage': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+      'name': 'Jessica Ramirez',
+      'lastMessage': "(Sad fact: you cannot search for a gif of the word “gif”, just gives you gifs.)",
+      'lastMessageTime': DateTime.parse('2023-05-24T07:24:00'),
+      'isGroup': false,
+      'userImage2': '',
+    },
+    {
+      'notification': false,
+      'id': '7',
+      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/theresa_webb.jpg',
+      'name': 'Theresa Webb',
+      'lastMessage': "I don't know why people are so anti pineapple pizza. I kind of like it.",
+      'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
+      'isGroup': false,
+      'userImage2': '',
+    },
+    {
+      'notification': true,
+      'id': '8',
+      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/joe_smith.jpg',
+      'name': 'Stephen & Angela',
+      'lastMessage': "There's no way you'll be able to jump your motorcycle over that bus.",
+      'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
+      'isGroup': true,
+      'userImage2': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/dianne_russell.jpg',
+    },
+    {
+      'notification': true,
+      'id': '9',
+      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/joe_smith.jpg',
+      'name': 'Stephen & Theresa',
+      'lastMessage': "There's no way you'll be able to jump your motorcycle over that bus.",
+      'lastMessageTime': DateTime.parse('2023-05-24T22:24:00'),
+      'isGroup': true,
+      'userImage2': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/theresa_webb.jpg',
+    }
+  ];
+
+  final SecureStorageHelper _secureStorageHelper = SecureStorageHelper();
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -284,7 +383,8 @@ class _SignupPageState extends State<SignupPage> {
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
-                                  onPressed: (){
+                                  onPressed: () async {
+                                    await _secureStorageHelper.saveListData('userChatList', userChatList);
                                     context.go('/homepage');
                                   },
                                   style: ButtonStyle(
