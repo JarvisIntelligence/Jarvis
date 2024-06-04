@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +8,9 @@ import 'package:jarvis_app/Components/cache_image.dart';
 import 'package:jarvis_app/Components/chat_bubble.dart';
 import 'package:jarvis_app/Components/Utilities/encrypter.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter/foundation.dart' as foundation;
+
 
 class Chat extends StatefulWidget {
   const Chat({super.key, required this.chatName, required this.isGroup, this.userImage, this.userImage2, required this.id});
@@ -28,6 +32,7 @@ class _ChatState extends State<Chat> {
   final SecureStorageHelper _secureStorageHelper = SecureStorageHelper();
   final AutoScrollController scrollController = AutoScrollController();
   bool showScrollBottomButton = false;
+  bool emojiShowing = false;
 
   List<Map<String, dynamic>> userChat = [
     {
@@ -109,7 +114,7 @@ class _ChatState extends State<Chat> {
   void initState() {
     super.initState();
     // automatically moves the screen to the bottom when a chat is opened
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       scrollController.jumpTo(scrollController.position.maxScrollExtent);
     });
     scrollController.addListener(scrollListener);
@@ -275,14 +280,14 @@ class _ChatState extends State<Chat> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: (widget.chatName == 'JARVIS AI')
-                        ? IconButton(
+                          ? IconButton(
                         onPressed: () {
                           _scaffoldKey.currentState?.openDrawer();
                         },
                         icon: SvgPicture.asset(
                           'assets/icons/hamburger_icon.svg', height: 20,),
                       )
-                        : IconButton(
+                          : IconButton(
                         onPressed: () {},
                         icon: const Icon(Icons.more_vert, size: 20, color: Colors.white,),
                       ),
@@ -291,24 +296,24 @@ class _ChatState extends State<Chat> {
                 ),
               ),
               Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 10, right: 10, bottom: 20, top: 20),
-                    child: ListView.builder(
-                      padding: EdgeInsets.zero,
-                      controller: scrollController,
-                      itemCount: userChat.length,
-                      itemBuilder: (context, index) {
-                        return AutoScrollTag(
-                          index: index,
-                          controller: scrollController,
-                          key: const ValueKey('ChatList'), // Unique key for ListView.builder
-                          child: Column(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 10, right: 10, bottom: 20, top: 20),
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    controller: scrollController,
+                    itemCount: userChat.length,
+                    itemBuilder: (context, index) {
+                      return AutoScrollTag(
+                        index: index,
+                        controller: scrollController,
+                        key: const ValueKey('ChatList'), // Unique key for ListView.builder
+                        child: Column(
                             children: chatWidgets
-                          ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
+                ),
               ),
             ],
           ),
@@ -332,85 +337,142 @@ class _ChatState extends State<Chat> {
         ],
       ),
       bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery
-            .of(context)
-            .viewInsets
-            .bottom), // Adjusts padding based on keyboard
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 5),
-          height: 70,
-          decoration: const BoxDecoration(
-              color: Color(0xFF090A0A),
-              border: Border(
-                  top: BorderSide(color: Color(0xFF202325), width: 1)
-              )
-          ),
-          child: Row(
+          padding: EdgeInsets.only(bottom: MediaQuery
+              .of(context)
+              .viewInsets
+              .bottom), // Adjusts padding based on keyboard
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.camera_alt, color: Color(0xFFCDCFD0),),
-              ),
-              IconButton(
-                  onPressed: () {},
-                  icon: SvgPicture.asset(
-                    'assets/icons/attach_icon.svg', height: 20,)
-              ),
-              const SizedBox(width: 3,),
-              Expanded(
-                child: Container(
-                  height: 50,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(50),
-                    border: Border.all(
-                      width: 1, // Adjust width as needed
-                      color: const Color(
-                          0x40ffffff), // Adjust color as needed
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                height: 70,
+                decoration: const BoxDecoration(
+                    color: Color(0xFF090A0A),
+                    border: Border(
+                        top: BorderSide(color: Color(0xFF202325), width: 1)
+                    )
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.camera_alt, color: Color(0xFFCDCFD0),),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                          onPressed: () {},
-                          icon: SvgPicture.asset(
-                            'assets/icons/emoji_icon.svg', height: 30,)
-                      ),
-                      Expanded(
-                        child: TextField(
-                          controller: messageController,
-                          style: const TextStyle(color: Color(0xFFE7E7FF),
-                              fontSize: 12,
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w400),
-                          cursorColor: const Color(0xFF979C9E),
-                          decoration: const InputDecoration(
-                            hintText: 'Message',
-                            border: InputBorder.none,
-                            hintStyle: TextStyle(color: Color(0xFF979C9E),
-                                fontSize: 12,
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w400),
+                    IconButton(
+                        onPressed: () {},
+                        icon: SvgPicture.asset(
+                          'assets/icons/attach_icon.svg', height: 20,)
+                    ),
+                    const SizedBox(width: 3,),
+                    Expanded(
+                      child: Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(50),
+                          border: Border.all(
+                            width: 1, // Adjust width as needed
+                            color: const Color(
+                                0x40ffffff), // Adjust color as needed
                           ),
                         ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    emojiShowing = !emojiShowing;
+                                  });
+                                  if (emojiShowing) {
+                                    SystemChannels.textInput.invokeMethod('TextInput.hide');
+                                  } else {
+                                    SystemChannels.textInput.invokeMethod('TextInput.show');
+                                  }
+                                },
+                                icon: SvgPicture.asset(
+                                    (emojiShowing) ? 'assets/icons/keyboard_icon.svg' : 'assets/icons/emoji_icon.svg', height: 30,)
+                            ),
+                            Expanded(
+                              child: TextField(
+                                controller: messageController,
+                                style: const TextStyle(color: Color(0xFFE7E7FF),
+                                    fontSize: 12,
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w400),
+                                cursorColor: const Color(0xFF979C9E),
+                                decoration: const InputDecoration(
+                                  hintText: 'Message',
+                                  border: InputBorder.none,
+                                  hintStyle: TextStyle(color: Color(0xFF979C9E),
+                                      fontSize: 12,
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w400),
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                                onPressed: () {},
+                                icon: SvgPicture.asset('assets/icons/send_icon.svg',
+                                  height: 30,)
+                            )
+                          ],
+                        ),
                       ),
-                      IconButton(
-                          onPressed: () {},
-                          icon: SvgPicture.asset('assets/icons/send_icon.svg',
-                            height: 30,)
-                      )
-                    ],
+                    ),
+                    IconButton(
+                        onPressed: () {
+                        },
+                        icon: const Icon(Icons.mic, color: Color(0xFFCDCFD0),)
+                    ),
+                  ],
+                ),
+              ),
+              Offstage(
+                offstage: !emojiShowing,
+                child: SizedBox(
+                  height: 200,
+                  child: EmojiPicker(
+                    textEditingController: messageController,
+                    config: Config(
+                      height: 20,
+                      checkPlatformCompatibility: true,
+                      emojiViewConfig: EmojiViewConfig(
+                        emojiSizeMax: 26 *
+                            (foundation.defaultTargetPlatform == TargetPlatform.iOS
+                                ?  1.20
+                                :  1.0),
+                        backgroundColor: Colors.white,
+                        columns: 8,
+                        noRecents: const Text('No Recents',
+                            style: TextStyle(
+                                fontSize: 10, fontFamily: 'Inter',
+                                color: Color(0xFF090A0A)),
+                            textAlign: TextAlign.center)
+                      ),
+                      swapCategoryAndBottomBar: true,
+                      skinToneConfig: const SkinToneConfig(
+                        enabled: true,
+                        indicatorColor: Color(0xFF6B4EFF),
+                      ),
+                      categoryViewConfig: const CategoryViewConfig(
+                        indicatorColor: Color(0xFF6B4EFF),
+                        iconColorSelected: Color(0xFF6B4EFF),
+                        backgroundColor: Colors.white
+                      ),
+                      bottomActionBarConfig: const BottomActionBarConfig(
+                        backgroundColor: Colors.white,
+                        buttonIconColor: Color(0xFF6B4EFF),
+                        buttonColor: Colors.transparent
+                      ),
+                      searchViewConfig: const SearchViewConfig(
+                        backgroundColor: Colors.white
+                      ),
+                    ),
                   ),
                 ),
               ),
-              IconButton(
-                  onPressed: () {
-
-                  },
-                  icon: const Icon(Icons.mic, color: Color(0xFFCDCFD0),)
-              ),
             ],
-          ),
-        ),
+          )
       ),
     );
   }
