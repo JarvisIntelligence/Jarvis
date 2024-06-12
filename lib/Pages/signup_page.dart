@@ -1,10 +1,12 @@
 import 'package:flutter/gestures.dart';
+import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jarvis_app/Components/Utilities/register_user.dart';
 import 'package:jarvis_app/Components/textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:jarvis_app/Components/Utilities/encrypter.dart';
-
+import 'package:lottie/lottie.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -28,96 +30,217 @@ class _SignupPageState extends State<SignupPage> {
     {
       'notification': true,
       'id': '1',
-      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/joe_smith.jpg',
-      'name': 'Stephen Yustiono',
+      'userImage': 'https://randomuser.me/api/portraits/men/32.jpg',
+      'name': 'John Doe',
       'lastMessage': "I don't know why people are so anti pineapple pizza. I kind of like it.",
       'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
       'isGroup': false,
       'userImage2': '',
+      'numberOfUsers': "1",
+      'userImage3': '',
+      'groupImage': ''
     },
     {
       'notification': false,
       'id': '2',
-      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/cody_fisher.jpg',
-      'name': 'Stephen Yustiono',
+      'userImage': 'https://randomuser.me/api/portraits/women/44.jpg',
+      'name': 'Emily Smith',
       'lastMessage': "There's no way you'll be able to jump your motorcycle over that bus.",
       'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
       'isGroup': false,
       'userImage2': '',
+      'numberOfUsers': "1",
+      'userImage3': '',
+      'groupImage': ''
     },
     {
       'notification': false,
       'id': '3',
-      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/joe_smith.jpg',
-      'name': 'Stephen & Fisher',
+      'userImage': 'https://randomuser.me/api/portraits/men/65.jpg',
+      'name': 'Alex & Sophia',
       'lastMessage': "I don't know why people are so anti pineapple pizza. I kind of like it.",
       'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
       'isGroup': true,
-      'userImage2': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/cody_fisher.jpg',
+      'userImage2': 'https://randomuser.me/api/portraits/women/68.jpg',
+      'numberOfUsers': "2",
+      'userImage3': '',
+      'groupImage': ''
     },
     {
       'notification': true,
       'id': '4',
-      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/joe_smith.jpg',
-      'name': 'Stephen Yustiono',
+      'userImage': 'https://randomuser.me/api/portraits/men/12.jpg',
+      'name': 'Michael Johnson',
       'lastMessage': "Tabs make way more sense than spaces. Convince me I'm wrong. LOL.",
       'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
       'isGroup': false,
       'userImage2': '',
+      'numberOfUsers': "1",
+      'userImage3': '',
+      'groupImage': ''
     },
     {
       'notification': false,
       'id': '5',
-      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/jenifier_lopez.jpg',
+      'userImage': 'https://randomuser.me/api/portraits/women/15.jpg',
       'name': 'Jennifer Lopez',
       'lastMessage': "I don't know why people are so anti pineapple pizza. I kind of like it.",
       'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
       'isGroup': false,
       'userImage2': '',
+      'numberOfUsers': "1",
+      'userImage3': '',
+      'groupImage': ''
     },
     {
       'notification': false,
       'id': '6',
-      'userImage': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+      'userImage': 'https://randomuser.me/api/portraits/women/50.jpg',
       'name': 'Jessica Ramirez',
-      'lastMessage': "(Sad fact: you cannot search for a gif of the word “gif”, just gives you gifs.)",
+      'lastMessage': "(Sad fact: you cannot search for a gif of the word “gif”, just gives you gifs.)",
       'lastMessageTime': DateTime.parse('2023-05-24T07:24:00'),
       'isGroup': false,
       'userImage2': '',
+      'numberOfUsers': "1",
+      'userImage3': '',
+      'groupImage': ''
     },
     {
       'notification': false,
       'id': '7',
-      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/theresa_webb.jpg',
-      'name': 'Theresa Webb',
+      'userImage': 'https://randomuser.me/api/portraits/women/23.jpg',
+      'name': 'Barbara Martinez',
       'lastMessage': "I don't know why people are so anti pineapple pizza. I kind of like it.",
       'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
       'isGroup': false,
       'userImage2': '',
+      'numberOfUsers': "1",
+      'userImage3': '',
+      'groupImage': ''
     },
     {
       'notification': true,
       'id': '8',
-      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/joe_smith.jpg',
-      'name': 'Stephen & Angela',
+      'userImage': 'https://randomuser.me/api/portraits/men/18.jpg',
+      'name': 'David & Angela',
       'lastMessage': "There's no way you'll be able to jump your motorcycle over that bus.",
       'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
       'isGroup': true,
-      'userImage2': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/dianne_russell.jpg',
+      'userImage2': 'https://randomuser.me/api/portraits/women/19.jpg',
+      'numberOfUsers': "2",
+      'userImage3': '',
+      'groupImage': 'https://picsum.photos/150'
     },
     {
       'notification': true,
       'id': '9',
-      'userImage': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/joe_smith.jpg',
-      'name': 'Stephen & Theresa',
+      'userImage': 'https://randomuser.me/api/portraits/men/24.jpg',
+      'name': 'Paul & Susan',
       'lastMessage': "There's no way you'll be able to jump your motorcycle over that bus.",
       'lastMessageTime': DateTime.parse('2023-05-24T22:24:00'),
       'isGroup': true,
-      'userImage2': 'https://raw.githubusercontent.com/CodeDeveloper19/Images/main/FoodZero/AuthorImages/theresa_webb.jpg',
-    }
+      'userImage2': 'https://randomuser.me/api/portraits/women/42.jpg',
+      'numberOfUsers': "2",
+      'userImage3': '',
+      'groupImage': 'https://picsum.photos/150'
+    },
+    {
+      'notification': false,
+      'id': '10',
+      'userImage': 'https://randomuser.me/api/portraits/men/10.jpg',
+      'name': 'Kevin Brown',
+      'lastMessage': "Did you see the game last night? It was amazing!",
+      'lastMessageTime': DateTime.parse('2023-05-24T21:00:00'),
+      'isGroup': false,
+      'userImage2': '',
+      'numberOfUsers': "1",
+      'userImage3': '',
+      'groupImage': ''
+    },
+    {
+      'notification': true,
+      'id': '11',
+      'userImage': 'https://randomuser.me/api/portraits/women/55.jpg',
+      'name': 'Laura Wilson',
+      'lastMessage': "Let's catch up soon! It's been too long.",
+      'lastMessageTime': DateTime.parse('2023-05-24T20:30:00'),
+      'isGroup': false,
+      'userImage2': 'https://randomuser.me/api/portraits/women/55.jpg',
+      'numberOfUsers': "1",
+      'userImage3': '',
+      'groupImage': ''
+    },
+    {
+      'notification': true,
+      'id': '12',
+      'userImage': 'https://randomuser.me/api/portraits/men/60.jpg',
+      'name': 'Chris & Sam',
+      'lastMessage': "Can we meet up for the project discussion?",
+      'lastMessageTime': DateTime.parse('2023-05-24T18:45:00'),
+      'isGroup': true,
+      'userImage2': 'https://randomuser.me/api/portraits/men/62.jpg',
+      'numberOfUsers': "2",
+      'userImage3': '',
+      'groupImage': ''
+    },
+    {
+      'notification': false,
+      'id': '13',
+      'userImage': 'https://randomuser.me/api/portraits/women/22.jpg',
+      'name': 'Natalie Adams',
+      'lastMessage': "I can't believe it's already summer!",
+      'lastMessageTime': DateTime.parse('2023-05-24T15:24:00'),
+      'isGroup': false,
+      'userImage2': '',
+      'numberOfUsers': "1",
+      'userImage3': '',
+      'groupImage': ''
+    },
+    {
+      'notification': true,
+      'id': '14',
+      'userImage': 'https://randomuser.me/api/portraits/men/40.jpg',
+      'name': 'Tom & Jerry',
+      'lastMessage': "We should plan a road trip next month.",
+      'lastMessageTime': DateTime.parse('2023-05-24T14:24:00'),
+      'isGroup': true,
+      'userImage2': 'https://randomuser.me/api/portraits/men/42.jpg',
+      'numberOfUsers': "2",
+      'userImage3': '',
+      'groupImage': 'https://picsum.photos/150'
+    },
+    {
+      'notification': false,
+      'id': '15',
+      'userImage': 'https://randomuser.me/api/portraits/women/35.jpg',
+      'name': 'Sophia Thompson',
+      'lastMessage': "I'm baking cookies today. Want some?",
+      'lastMessageTime': DateTime.parse('2023-05-24T13:24:00'),
+      'isGroup': false,
+      'userImage2': '',
+      'numberOfUsers': "1",
+      'userImage3': '',
+      'groupImage': ''
+    },
+    {
+      'notification': true,
+      'id': '16',
+      'userImage': 'https://randomuser.me/api/portraits/men/29.jpg',
+      'name': 'James & Michael',
+      'lastMessage': "Meet me at the park tomorrow.",
+      'lastMessageTime': DateTime.parse('2023-05-24T12:24:00'),
+      'isGroup': true,
+      'userImage2': 'https://randomuser.me/api/portraits/men/31.jpg',
+      'numberOfUsers': "3",
+      'userImage3': 'https://randomuser.me/api/portraits/lego/1.jpg',
+      'groupImage': ''
+    },
   ];
 
   final SecureStorageHelper _secureStorageHelper = SecureStorageHelper();
+  bool progressVisible = false;
+
+  final Map<String, dynamic> userRegisterJsonData = {};
 
   @override
   void initState() {
@@ -132,6 +255,88 @@ class _SignupPageState extends State<SignupPage> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  void updateProgressVisible() {
+    setState(() {
+      progressVisible = !progressVisible;
+    });
+  }
+
+  void validateEmailAddress() {
+    if (_emailController.text.isEmpty) {
+      InAppNotifications.show(
+          description:
+          'Email input field cannot be empty',
+          onTap: () {}
+      );
+      return;
+    } else if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(_emailController.text)) {
+      InAppNotifications.show(
+          description:
+          'Email address is not in a valid format',
+          onTap: () {}
+      );
+      return;
+    }
+    userRegisterJsonData['email'] = _emailController.text;
+    _controller.animateToPage(
+        1,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut
+    );
+  }
+
+  void validateUserNameAndFullName() {
+    if(_usernameController.text.isEmpty || _fullNameController.text.isEmpty){
+      InAppNotifications.show(
+          description:
+          'One or both input fields are empty',
+          onTap: () {}
+      );
+      return;
+    }
+    userRegisterJsonData['username'] = _usernameController.text;
+    userRegisterJsonData['fullname'] = _fullNameController.text;
+    _controller.animateToPage(
+        2,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut
+    );
+  }
+
+  void validatePassword() {
+    if (_passwordController.text.isEmpty){
+      InAppNotifications.show(
+          description:
+          'Password input field is empty',
+          onTap: () {}
+      );
+      return;
+    } else{
+      if(_passwordController.text != _confirmPasswordController.text){
+        InAppNotifications.show(
+            description:
+            'Your confirm password does not match your password',
+            onTap: () {}
+        );
+        return;
+      }
+    }
+    userRegisterJsonData['password'] = _passwordController.text;
+    signUp();
+  }
+
+  Future<void> signUp() async {
+    updateProgressVisible();
+    Future<bool> isRegisterSuccessful= RegisterUser().registerUser(userRegisterJsonData);
+    if(await isRegisterSuccessful){
+      await _secureStorageHelper.saveListData('userChatList', userChatList);
+      updateProgressVisible();
+      context.go('/homepage');
+    } else{
+      updateProgressVisible();
+    }
   }
 
   @override
@@ -150,266 +355,316 @@ class _SignupPageState extends State<SignupPage> {
               );
             }
           },
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.only(top: 100,),
-            child: Column(
-                children: [
-                  Align(
-                    alignment: Alignment.center,
-                    child: SvgPicture.asset(
-                      'assets/icons/logo.svg',
-                      width: 118,
-                      height: 48,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 70,
-                  ),
-                  SizedBox(
-                    height: 385,
-                    child: PageView(
-                      controller: _controller,
-                      onPageChanged: (int page) {
-                        setState(() {
-                          _currentPageIndex = page;
-                        });
-                      },
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 30),
-                          child: Column(
-                            children: [
-                              const Text('Create an Account', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
-                              const SizedBox(height: 5,),
-                              const Text('Enter your email to signup for this app', style: TextStyle(fontSize: 14, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
-                              const SizedBox(
-                                height: 30,
-                              ),
-                              CustomTextField(controller: _emailController, labelText: 'email@domain.com', obscureText: false,),
-                              const SizedBox(
-                                height: 15,
-                              ),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: (){
-                                    _controller.animateToPage(
-                                        1,
-                                        duration: const Duration(milliseconds: 500),
-                                        curve: Curves.easeInOut
-                                    );
-                                  },
-                                  style: ButtonStyle(
-                                    shape: WidgetStateProperty.all<OutlinedBorder>(
-                                      RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8.32), // BorderRadius
-                                      ),
-                                    ),
-                                    backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
-                                    fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
-                                  ),
-                                  child: const Text("Sign up with email", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 25,
-                              ),
-                              SizedBox(
-                                width: double.infinity,
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                        child: Container(
-                                          color: const Color(0xFFCDCFD0),
-                                          height: 1,
-                                        )
-                                    ),
-                                    const Padding(
-                                      padding: EdgeInsets.symmetric(horizontal: 10),
-                                      child: Text('or continue with', style: TextStyle(color: Color(0xFF979C9E), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
-                                    ),
-                                    Expanded(
-                                        child: Container(
-                                          color: const Color(0xFFCDCFD0),
-                                          height: 1,
-                                        )
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 25,
-                              ),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                    onPressed: (){},
-                                    style: ButtonStyle(
-                                      shape: WidgetStateProperty.all<OutlinedBorder>(
-                                        RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8.32), // BorderRadius
-                                        ),
-                                      ),
-                                      backgroundColor: WidgetStateProperty.all(Colors.white),
-                                      fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        SvgPicture.asset(
-                                          'assets/icons/google.svg',
-                                        ),
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                padding: const EdgeInsets.only(top: 100,),
+                child: Column(
+                    children: [
+                      Align(
+                        alignment: Alignment.center,
+                        child: SvgPicture.asset(
+                          'assets/icons/logo.svg',
+                          width: 118,
+                          height: 48,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 70,
+                      ),
+                      SizedBox(
+                        height: 385,
+                        child: PageView(
+                          controller: _controller,
+                          onPageChanged: (int page) {
+                            setState(() {
+                              _currentPageIndex = page;
+                            });
+                          },
+                          physics: const NeverScrollableScrollPhysics(),
+                          children: <Widget>[
+                            inputEmail(),
+                            inputUserNameFullName(),
+                            inputPassword()
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 50,)
+                    ]
+                ),
+              ),
+              loadingAnimation()
+            ],
+          )
+        )
+    );
+  }
 
-                                        const SizedBox(width: 8.32,),
-                                        const Text("Google", style: TextStyle(color: Color(0xFF404446), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
-                                      ],
-                                    )
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 20,
-                              ),
-                              Center(
-                                child: RichText(
-                                  text: TextSpan(
-                                    text: "If you already have an account ",
-                                    style: const TextStyle(
-                                        color: Color(0xFF828282), fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w400
-                                    ),
-                                    children: <TextSpan>[
-                                      TextSpan(
-                                        text: ' Log in here',
-                                        style: const TextStyle(
-                                            color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic
-                                        ),
-                                        recognizer: TapGestureRecognizer()
-                                          ..onTap = () {
-                                            // Handle the tap
-                                            context.go('/auth/login');
-                                            // You can navigate to the sign-up page or perform any action here
-                                          },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 20,
-                              ),
-                              RichText(
-                                textAlign: TextAlign.center,
-                                text: TextSpan(
-                                    text: 'By clicking continue, you agree to our ',
-                                    style: const TextStyle(color: Color(0xFF828282), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, height: 1.3),
-                                    children: <TextSpan>[
-                                      TextSpan(
-                                        text: 'Terms of Service',
-                                        style: const TextStyle(color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
-                                        recognizer: TapGestureRecognizer()
-                                          ..onTap = () {
-                                            // Handle the tap
-                                            // You can navigate to the sign-up page or perform any action here
-                                          },
-                                      ),
-                                      const TextSpan(
-                                        text: ' and ',
-                                        style: TextStyle(color: Color(0xFF828282), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400),
-                                      ),
-                                      TextSpan(
-                                        text: 'Privacy Policy',
-                                        style: const TextStyle(color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
-                                        recognizer: TapGestureRecognizer()
-                                          ..onTap = () {
-                                            // Handle the tap
-                                            // You can navigate to the sign-up page or perform any action here
-                                          },
-                                      )
-                                    ]
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 30),
-                          child: Column(
-                            children: [
-                              const Text('Enter Personal Details', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
-                              const SizedBox(height: 30,),
-                              CustomTextField(controller: _usernameController, labelText: 'Username', obscureText: false),
-                              const SizedBox(height: 20,),
-                              CustomTextField(controller: _fullNameController, labelText: 'Full Name', obscureText: false),
-                              const SizedBox(
-                                height: 20,
-                              ),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: (){
-                                    _controller.animateToPage(
-                                        2,
-                                        duration: const Duration(milliseconds: 500),
-                                        curve: Curves.easeInOut
-                                    );
-                                  },
-                                  style: ButtonStyle(
-                                    shape: WidgetStateProperty.all<OutlinedBorder>(
-                                      RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8.32), // BorderRadius
-                                      ),
-                                    ),
-                                    backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
-                                    fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
-                                  ),
-                                  child: const Text("Proceed", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 30),
-                          child: Column(
-                            children: [
-                              const Text('Create Password', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
-                              const SizedBox(height: 30,),
-                              CustomTextField(controller: _passwordController, labelText: 'Enter Password', obscureText: true),
-                              const SizedBox(height: 20,),
-                              CustomTextField(controller: _confirmPasswordController, labelText: 'Confirm Password', obscureText: true),
-                              const SizedBox(
-                                height: 20,
-                              ),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    await _secureStorageHelper.saveListData('userChatList', userChatList);
-                                    context.go('/homepage');
-                                  },
-                                  style: ButtonStyle(
-                                    shape: WidgetStateProperty.all<OutlinedBorder>(
-                                      RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8.32), // BorderRadius
-                                      ),
-                                    ),
-                                    backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
-                                    fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
-                                  ),
-                                  child: const Text("Finish", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+  Widget loadingAnimation() {
+    return Visibility(
+      visible: progressVisible,
+      child: Container(
+        color: Colors.black87,
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        child: Center(
+          child: Lottie.asset('assets/lottie_animations/loading_animation.json', width: 80),
+        ),
+      )
+    );
+  }
+
+  Widget inputEmail() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 30),
+      child: Column(
+        children: [
+          const Text('Create an Account', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
+          const SizedBox(height: 5,),
+          const Text('Enter your email to signup for this app', style: TextStyle(fontSize: 14, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
+          const SizedBox(
+            height: 30,
+          ),
+          CustomTextField(controller: _emailController, labelText: 'email@domain.com', obscureText: false,),
+          const SizedBox(
+            height: 15,
+          ),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: validateEmailAddress,
+              style: ButtonStyle(
+                shape: WidgetStateProperty.all<OutlinedBorder>(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.32), // BorderRadius
+                  ),
+                ),
+                backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
+                fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
+              ),
+              child: const Text("Sign up with email", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+            ),
+          ),
+          const SizedBox(
+            height: 25,
+          ),
+          SizedBox(
+            width: double.infinity,
+            child: Row(
+              children: [
+                Expanded(
+                    child: Container(
+                      color: const Color(0xFFCDCFD0),
+                      height: 1,
+                    )
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: Text('or continue with', style: TextStyle(color: Color(0xFF979C9E), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
+                ),
+                Expanded(
+                    child: Container(
+                      color: const Color(0xFFCDCFD0),
+                      height: 1,
+                    )
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(
+            height: 25,
+          ),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+                onPressed: (){},
+                style: ButtonStyle(
+                  shape: WidgetStateProperty.all<OutlinedBorder>(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.32), // BorderRadius
                     ),
                   ),
-                  const SizedBox(height: 50,)
+                  backgroundColor: WidgetStateProperty.all(Colors.white),
+                  fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SvgPicture.asset(
+                      'assets/icons/google.svg',
+                    ),
+
+                    const SizedBox(width: 8.32,),
+                    const Text("Google", style: TextStyle(color: Color(0xFF404446), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+                  ],
+                )
+            ),
+          ),
+          const SizedBox(
+            height: 20,
+          ),
+          Center(
+            child: RichText(
+              text: TextSpan(
+                text: "If you already have an account ",
+                style: const TextStyle(
+                    color: Color(0xFF828282), fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w400
+                ),
+                children: <TextSpan>[
+                  TextSpan(
+                    text: ' Log in here',
+                    style: const TextStyle(
+                        color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        // Handle the tap
+                        context.go('/auth/login');
+                        // You can navigate to the sign-up page or perform any action here
+                      },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(
+            height: 20,
+          ),
+          RichText(
+            textAlign: TextAlign.center,
+            text: TextSpan(
+                text: 'By clicking continue, you agree to our ',
+                style: const TextStyle(color: Color(0xFF828282), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, height: 1.3),
+                children: <TextSpan>[
+                  TextSpan(
+                    text: 'Terms of Service',
+                    style: const TextStyle(color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        // Handle the tap
+                        // You can navigate to the sign-up page or perform any action here
+                      },
+                  ),
+                  const TextSpan(
+                    text: ' and ',
+                    style: TextStyle(color: Color(0xFF828282), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400),
+                  ),
+                  TextSpan(
+                    text: 'Privacy Policy',
+                    style: const TextStyle(color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        // Handle the tap
+                        // You can navigate to the sign-up page or perform any action here
+                      },
+                  )
                 ]
             ),
           ),
-        )
+        ],
+      ),
+    );
+  }
+
+  Widget inputUserNameFullName() {
+    return  Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 30),
+      child: Stack(
+        children: [
+          Column(
+            children: [
+              const Text('Enter Personal Details', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
+              const SizedBox(height: 30,),
+              CustomTextField(controller: _usernameController, labelText: 'Username', obscureText: false),
+              const SizedBox(height: 20,),
+              CustomTextField(controller: _fullNameController, labelText: 'Full Name', obscureText: false),
+              const SizedBox(
+                height: 20,
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: validateUserNameAndFullName,
+                  style: ButtonStyle(
+                    shape: WidgetStateProperty.all<OutlinedBorder>(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.32), // BorderRadius
+                      ),
+                    ),
+                    backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
+                    fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
+                  ),
+                  child: const Text("Proceed", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+                ),
+              ),
+            ],
+          ),
+          Positioned(
+            top: -12,
+            left: -10,
+            child: IconButton(
+                onPressed: () {
+                  _controller.previousPage(
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeInOut
+                  );
+                },
+                icon: const Icon(Icons.arrow_back, color: Colors.white,)
+            ),
+          )
+        ],
+      )
+    );
+  }
+
+  Widget inputPassword() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 30),
+      child: Stack(
+        children: [
+          Column(
+            children: [
+              const Text('Create Password', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
+              const SizedBox(height: 30,),
+              CustomTextField(controller: _passwordController, labelText: 'Enter Password', obscureText: true),
+              const SizedBox(height: 20,),
+              CustomTextField(controller: _confirmPasswordController, labelText: 'Confirm Password', obscureText: true),
+              const SizedBox(
+                height: 20,
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: validatePassword,
+                  style: ButtonStyle(
+                    shape: WidgetStateProperty.all<OutlinedBorder>(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.32), // BorderRadius
+                      ),
+                    ),
+                    backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
+                    fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
+                  ),
+                  child: const Text("Finish", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+                ),
+              ),
+            ],
+          ),
+          Positioned(
+            top: -12,
+            left: -10,
+            child: IconButton(
+                onPressed: () {
+                  _controller.previousPage(
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeInOut
+                  );
+                },
+                icon: const Icon(Icons.arrow_back, color: Colors.white,)
+            ),
+          )
+        ],
+      ),
     );
   }
 }

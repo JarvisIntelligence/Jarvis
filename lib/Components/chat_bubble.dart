@@ -8,7 +8,12 @@ class ChatBubble extends StatefulWidget {
     required this.isSender, required this.chatName,
     required this.isGroup, required this.chatTime,
     required this.senderName, required this.isDelivered,
-    required this.isSent, required this.hasDifferentSender
+    required this.isSent, required this.hasDifferentSender,
+    required this.isStarred, required this.showCopyMessage,
+    required this.showReplyMessage, required this.isLongPressed,
+    required this.changeIsLongPressed, required this.increaseDecreaseNumberOfSelectedBubbles,
+    required this.numberOfSelectedBubbles, required this.isChatSelected,
+    required this.changeIsChatSelected
   });
 
   final bool isSender;
@@ -20,41 +25,76 @@ class ChatBubble extends StatefulWidget {
   final bool isSent;
   final String chatTime;
   final bool hasDifferentSender;
+  final bool isStarred;
+  final Function() showCopyMessage;
+  final Function() changeIsLongPressed;
+  final Function(String increaseOrDecrease) increaseDecreaseNumberOfSelectedBubbles;
+  final bool isLongPressed;
+  final int numberOfSelectedBubbles;
+  final Function(String replyMessage, String replyName) showReplyMessage;
+  final bool isChatSelected;
+  final Function() changeIsChatSelected;
 
   @override
   State<ChatBubble> createState() => _ChatBubbleState();
 }
 
 class _ChatBubbleState extends State<ChatBubble> {
-  bool isChatSelected = false;
+  late bool isStarred;
+
+  void handleReplyButtonPressed() {
+    widget.showReplyMessage(widget.message, widget.senderName);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    isStarred = widget.isStarred; // Initialize isStarred with widget.isStarred
+  }
 
   @override
   Widget build(BuildContext context) {
     List<Widget>chatOrder = [
-      BubbleSpecialThree(
-        constraints: const BoxConstraints(
-            maxWidth: 200,
-            minHeight: 20
-        ),
-        text: widget.message,
-        tail: true,
-        isSender: widget.isSender,
-        color: (widget.isSender)
-            ? (isChatSelected) ? const Color(0xFFc0b5f9) : const Color(0xFF5538EE)
-            : (isChatSelected) ? const Color(0xFFafb4b9) : const Color(0xFF303437),
-        textStyle: const TextStyle(
-            color: Color(0xFFFFFFFF),
-            fontSize: 12,
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w400
-        ),
-        userName: (widget.isGroup) ? widget.senderName : null,
-        userNameTextStyle: const TextStyle(
-            color: Color(0xFF979C9E),
-            fontSize: 12,
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w400
-        ),
+      Stack(
+        children: [
+          BubbleSpecialThree(
+            constraints: const BoxConstraints(
+                maxWidth: 200,
+                minHeight: 20
+            ),
+            text: widget.message,
+            tail: true,
+            isSender: widget.isSender,
+            color: (widget.isSender)
+                ? (widget.isChatSelected && widget.numberOfSelectedBubbles > 0)
+                  ? const Color(0xFFc0b5f9)
+                  : const Color(0xFF5538EE)
+                : (widget.isChatSelected && widget.numberOfSelectedBubbles > 0)
+                  ? const Color(0xFFafb4b9)
+                  : const Color(0xFF303437),
+            textStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400
+            ),
+            userName: (widget.isGroup && !widget.isSender) ? widget.senderName : null,
+            userNameTextStyle: const TextStyle(
+                color: Color(0xFF979C9E),
+                fontSize: 12,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400
+            ),
+          ),
+          Visibility(
+            visible: isStarred,
+            child: Positioned(
+                left: (widget.isSender) ? 6 : null,
+                right: (widget.isSender) ? null : 6,
+                child: Image.asset('assets/icons/star.png', width: 10,)
+            ),
+          ),
+        ],
       ),
       Text(widget.chatTime, style: const TextStyle(color: Color(0xFF979C9E), fontSize: 10),),
     ];
@@ -66,15 +106,23 @@ class _ChatBubbleState extends State<ChatBubble> {
           children: [
             GestureDetector(
               onLongPress: (){
-                setState(() {
-                  isChatSelected = !isChatSelected;
-                });
+                if (widget.isChatSelected) {
+                  widget.increaseDecreaseNumberOfSelectedBubbles('decrease');
+                } else {
+                  widget.increaseDecreaseNumberOfSelectedBubbles('increase');
+                }
+                widget.changeIsChatSelected();
+                widget.changeIsLongPressed();
               },
               onTap: (){
-                if(isChatSelected) {
-                  setState(() {
-                    isChatSelected = !isChatSelected;
-                  });
+                if (widget.isChatSelected) {
+                  widget.increaseDecreaseNumberOfSelectedBubbles('decrease');
+                }
+                if (widget.isLongPressed && !widget.isChatSelected){
+                  widget.increaseDecreaseNumberOfSelectedBubbles('increase');
+                }
+                if (widget.isChatSelected || widget.isLongPressed) {
+                  widget.changeIsChatSelected();
                 }
               },
               child: Row(
@@ -83,47 +131,62 @@ class _ChatBubbleState extends State<ChatBubble> {
                 children: (widget.isSender) ? reversedChatOrder : chatOrder
               ),
             ),
-            Visibility(
-              visible: isChatSelected,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: (widget.hasDifferentSender) ? 0: 10, left: 20, top: 5, right: (widget.isSender) ? 20: 0),
-                child: Row(
-                  mainAxisAlignment: (widget.isSender) ? MainAxisAlignment.end : MainAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: (){},
-                      child: SvgPicture.asset('assets/icons/corner_up_right_icon.svg', width: 10,),
-                    ), // forward
-                    const SizedBox(width: 10,),
-                    GestureDetector(
-                      onTap: (){
-                        FlutterClipboard.copy(widget.message);
-                      },
-                      child: const Icon(Icons.copy, size: 12, color: Color(0xFF979C9E),),
-                    ), // copy
-                    const SizedBox(width: 10,),
-                    GestureDetector(
-                        onTap: (){},
-                        child: Image.asset('assets/icons/push_pin_icon.png', width: 13, color: const Color(0xFF979C9E),)
-                    ), // pin
-                    const SizedBox(width: 10,),
-                    GestureDetector(
-                      onTap: (){
-                        FlutterClipboard.copy(widget.message);
-                      },
-                      child: const Icon(Icons.star_border_outlined, size: 12, color: Color(0xFF979C9E),),
-                    ), // star
-                    const SizedBox(width: 10,),
-                    GestureDetector(
-                        onTap: (){},
-                        child: Image.asset('assets/icons/reply_icon.png', width: 12, color: const Color(0xFF979C9E),)
-                    ), // reply
-                  ],
-                ),
-              ),
-            )
+            chatBubbleOptions(),
           ],
         )
+    );
+  }
+
+  Widget chatBubbleOptions () {
+    return Visibility(
+      visible: (widget.isChatSelected && widget.numberOfSelectedBubbles < 2),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: (widget.hasDifferentSender) ? 0: 10, left: 20, top: 5, right: (widget.isSender) ? 20: 0),
+        child: Row(
+          mainAxisAlignment: (widget.isSender) ? MainAxisAlignment.end : MainAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onTap: (){},
+              child: SvgPicture.asset('assets/icons/corner_up_right_icon.svg', width: 14,),
+            ), // forward
+            const SizedBox(width: 10,),
+            GestureDetector(
+              onTap: () {
+                FlutterClipboard.copy(widget.message);
+                widget.changeIsChatSelected();
+                widget.showCopyMessage();
+              },
+              child: const Icon(Icons.copy, size: 12, color: Color(0xFF979C9E),),
+            ), // copy
+            const SizedBox(width: 10,),
+            GestureDetector(
+                onTap: (){},
+                child: Image.asset('assets/icons/push_pin_icon.png', width: 14, color: const Color(0xFF979C9E),)
+            ), // pin
+            const SizedBox(width: 10,),
+            GestureDetector(
+              onTap: (){
+                setState(() {
+                  isStarred = !isStarred;
+                });
+                widget.changeIsChatSelected();
+              },
+              child: Icon((isStarred)
+                  ? Icons.star
+                  : Icons.star_border_outlined,
+                size: 14,
+                color: (isStarred)
+                    ? const Color(0xFF6B4EFF)
+                    : const Color(0xFF979C9E),),
+            ), // star
+            const SizedBox(width: 10,),
+            GestureDetector(
+                onTap: handleReplyButtonPressed,
+                child: Image.asset('assets/icons/reply_icon.png', width: 14, color: const Color(0xFF979C9E),)
+            ), // reply
+          ],
+        ),
+      ),
     );
   }
 }

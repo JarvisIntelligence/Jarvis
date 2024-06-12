@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jarvis_app/Components/chat.dart';
+import 'package:jarvis_app/Pages/add_new_users_page.dart';
 import 'package:jarvis_app/Pages/auth_page.dart';
 import 'package:jarvis_app/Pages/login_page.dart';
 import 'package:jarvis_app/Pages/signup_page.dart';
@@ -69,24 +70,36 @@ class _MyAppState extends State<MyApp> {
           },
           routes: <RouteBase>[
             GoRoute(
-              path: 'chat/:name/:boolValue/:image1Value/:image2Value/:id',
+              path: 'chat/:name/:boolValue/:image1Value/:image2Value/:id/:image3Value/:numberOfUsersValue',
               builder: (BuildContext context, GoRouterState state) {
                 final String name = state.pathParameters['name']!;
                 final String image1Value =
                 Uri.decodeComponent(state.pathParameters['image1Value']!);
                 final String image2Value =
                 Uri.decodeComponent(state.pathParameters['image2Value']!);
+                final String image3Value =
+                Uri.decodeComponent(state.pathParameters['image3Value']!);
                 final bool isGroup = state.pathParameters['boolValue'] == 'true';
                 final String id = state.pathParameters['id']!;
+                final String numberOfUsersValue = state.pathParameters['numberOfUsersValue']!;
+
                 return Chat(
                   chatName: name,
                   isGroup: isGroup,
                   userImage: image1Value,
                   userImage2: image2Value,
-                  id: id
+                  userImage3: image3Value,
+                  id: id,
+                  numberOfUsers: numberOfUsersValue,
                 );
               },
             ),
+            GoRoute(
+              path: 'addnewusers',
+              builder: (BuildContext context, GoRouterState state) {
+                return const AddNewUsersPage();
+              },
+            )
           ],
         ),
       ],

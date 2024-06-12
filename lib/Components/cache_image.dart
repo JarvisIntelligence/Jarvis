@@ -1,28 +1,62 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 
 class CacheImage extends StatelessWidget {
-  const CacheImage({super.key, required this.imageUrl, required this.isGroup});
+  const CacheImage({super.key, required this.imageUrl,
+    required this.isGroup, required this.numberOfUsers});
 
   final String imageUrl;
   final bool isGroup;
+  final String numberOfUsers;
+
+
+  void onImageLoadFailed(error) {
+    String errorMessage = '';
+    if (error is SocketException) {
+      errorMessage = 'Check your network connection. Profile Images failed to load';
+    } else {
+      errorMessage = 'Contact our customer service. Profile Images failed to load';
+    }
+    InAppNotifications.show(
+        description: errorMessage,
+        onTap: () {}
+    );    // Place your function logic here
+  }
 
   @override
   Widget build(BuildContext context) {
     return CachedNetworkImage(
       imageUrl: imageUrl,
       imageBuilder: (context, imageProvider) => CircleAvatar(
-        radius: (isGroup) ? 15 : 20,
+        radius: (isGroup)
+            ? (int.parse(numberOfUsers) > 2)
+              ? 12
+              : 15
+            : 20,
         backgroundImage: imageProvider,
       ),
       placeholder: (context, url) => CircleAvatar(
-        radius: (isGroup) ? 15 : 20,
+        radius:(isGroup)
+            ? (int.parse(numberOfUsers) > 2)
+              ? 12
+              : 15
+            : 20,
         child: const CircularProgressIndicator(),
       ),
-      errorWidget: (context, url, error) => CircleAvatar(
-        radius: (isGroup) ? 15 : 20,
-        child: const Icon(Icons.error),
-      ),
+      errorWidget: (context, url, error) {
+        onImageLoadFailed(error); // Call the function when image loading fails
+        return CircleAvatar(
+            radius: (isGroup)
+                ? (int.parse(numberOfUsers) > 2)
+                  ? 12
+                  : 15
+                : 20,
+            backgroundImage: const AssetImage('assets/icons/blank_profile.png'),
+        );
+      }
     );
   }
 }

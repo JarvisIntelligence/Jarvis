@@ -20,6 +20,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      enableSuggestions: false,
+      autocorrect: false,
       obscureText: widget.obscureText,
       controller: widget.controller,
       cursorColor: const Color(0xFF979C9E),
