@@ -5,7 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 class ChatBubble extends StatefulWidget {
   const ChatBubble({super.key, required this.message,
-    required this.isSender, required this.chatName,
+    required this.isSender,
     required this.isGroup, required this.chatTime,
     required this.senderName, required this.isDelivered,
     required this.isSent, required this.hasDifferentSender,
@@ -13,17 +13,18 @@ class ChatBubble extends StatefulWidget {
     required this.showReplyMessage, required this.isLongPressed,
     required this.changeIsLongPressed, required this.increaseDecreaseNumberOfSelectedBubbles,
     required this.numberOfSelectedBubbles, required this.isChatSelected,
-    required this.changeIsChatSelected
+    required this.changeIsChatSelected, required this.storeCopyDetailsSecureStorage,
+    required this.chatDate, required this.removeCopyDetailSecureStorage
   });
 
   final bool isSender;
   final String senderName;
   final String message;
-  final String chatName;
   final bool isGroup;
   final bool isDelivered;
   final bool isSent;
   final String chatTime;
+  final String chatDate;
   final bool hasDifferentSender;
   final bool isStarred;
   final Function() showCopyMessage;
@@ -34,6 +35,8 @@ class ChatBubble extends StatefulWidget {
   final Function(String replyMessage, String replyName) showReplyMessage;
   final bool isChatSelected;
   final Function() changeIsChatSelected;
+  final Function(String entry) storeCopyDetailsSecureStorage;
+  final Function(String entry) removeCopyDetailSecureStorage;
 
   @override
   State<ChatBubble> createState() => _ChatBubbleState();
@@ -91,7 +94,7 @@ class _ChatBubbleState extends State<ChatBubble> {
             child: Positioned(
                 left: (widget.isSender) ? 6 : null,
                 right: (widget.isSender) ? null : 6,
-                child: Image.asset('assets/icons/star.png', width: 10,)
+                child: const Icon(Icons.star, size: 10, color: Colors.grey,)
             ),
           ),
         ],
@@ -108,8 +111,10 @@ class _ChatBubbleState extends State<ChatBubble> {
               onLongPress: (){
                 if (widget.isChatSelected) {
                   widget.increaseDecreaseNumberOfSelectedBubbles('decrease');
+                  widget.removeCopyDetailSecureStorage('[${widget.chatDate}, ${widget.chatTime}] ${widget.senderName}: ${widget.message}');
                 } else {
                   widget.increaseDecreaseNumberOfSelectedBubbles('increase');
+                  widget.storeCopyDetailsSecureStorage('[${widget.chatDate}, ${widget.chatTime}] ${widget.senderName}: ${widget.message}');
                 }
                 widget.changeIsChatSelected();
                 widget.changeIsLongPressed();
@@ -117,9 +122,11 @@ class _ChatBubbleState extends State<ChatBubble> {
               onTap: (){
                 if (widget.isChatSelected) {
                   widget.increaseDecreaseNumberOfSelectedBubbles('decrease');
+                  widget.removeCopyDetailSecureStorage('[${widget.chatDate}, ${widget.chatTime}] ${widget.senderName}: ${widget.message}');
                 }
                 if (widget.isLongPressed && !widget.isChatSelected){
                   widget.increaseDecreaseNumberOfSelectedBubbles('increase');
+                  widget.storeCopyDetailsSecureStorage('[${widget.chatDate}, ${widget.chatTime}] ${widget.senderName}: ${widget.message}');
                 }
                 if (widget.isChatSelected || widget.isLongPressed) {
                   widget.changeIsChatSelected();
@@ -152,6 +159,9 @@ class _ChatBubbleState extends State<ChatBubble> {
             const SizedBox(width: 10,),
             GestureDetector(
               onTap: () {
+                if (widget.isChatSelected) {
+                  widget.increaseDecreaseNumberOfSelectedBubbles('decrease');
+                }
                 FlutterClipboard.copy(widget.message);
                 widget.changeIsChatSelected();
                 widget.showCopyMessage();
@@ -166,6 +176,9 @@ class _ChatBubbleState extends State<ChatBubble> {
             const SizedBox(width: 10,),
             GestureDetector(
               onTap: (){
+                if (widget.isChatSelected) {
+                  widget.increaseDecreaseNumberOfSelectedBubbles('decrease');
+                }
                 setState(() {
                   isStarred = !isStarred;
                 });

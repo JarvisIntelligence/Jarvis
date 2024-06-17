@@ -1,63 +1,144 @@
 import 'package:flutter/material.dart';
+import 'package:jarvis_app/Components/Utilities/password_strength_checker.dart';
+import 'package:jarvis_app/Components/password_strength_indicator.dart';
 
 class CustomTextField extends StatefulWidget {
   const CustomTextField({
     Key? key,
     required this.controller,
     required this.labelText,
-    required this.obscureText
+    required this.obscureText,
+    required this.hintText
   }) : super(key: key);
 
   final TextEditingController controller;
   final String labelText;
   final bool obscureText;
+  final String hintText;
 
   @override
   State<CustomTextField> createState() => _CustomTextFieldState();
 }
 
 class _CustomTextFieldState extends State<CustomTextField> {
+  late bool isObscured;
+
+  String indicatorText = '';
+  Color indicatorColor = Colors.transparent;
+  int numberOfIndicator = 0;
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    setState(() {
+      isObscured = widget.obscureText;
+    });
+    _focusNode.addListener(() {
+      setState(() {}); // Update the UI when the focus changes
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      enableSuggestions: false,
-      autocorrect: false,
-      obscureText: widget.obscureText,
-      controller: widget.controller,
-      cursorColor: const Color(0xFF979C9E),
-      style: const TextStyle(
-        color: Color(0xFF979C9E),
-        fontSize: 12,
-        fontFamily: 'Inter',
-        fontWeight: FontWeight.normal,
-      ),
-      decoration: InputDecoration(
-        labelText: widget.labelText,
-        labelStyle: const TextStyle(
-          color: Color(0xFF979C9E),
-          fontSize: 12,
-          fontFamily: 'Inter',
-          fontWeight: FontWeight.w400,
+    return Stack(
+      children: [
+        Column(
+          children: [
+            TextField(
+              onChanged: (text) {
+                if(widget.controller.text.isNotEmpty && widget.labelText == 'Enter Password'){
+                  setState(() {
+                    indicatorText = PasswordStrengthChecker().calculatePasswordStrength(widget.controller.text);
+                    indicatorColor = PasswordStrengthChecker().getIndicatorColor(indicatorText);
+                    numberOfIndicator = PasswordStrengthChecker().getNumberOfIndicator(indicatorText);
+                  });
+                }
+              },
+              enableSuggestions: false,
+              autocorrect: false,
+              obscureText: isObscured,
+              controller: widget.controller,
+              cursorColor: const Color(0xFF979C9E),
+              focusNode: _focusNode,
+              style: const TextStyle(
+                color: Color(0xFF979C9E),
+                fontSize: 12,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.normal,
+              ),
+              decoration: InputDecoration(
+                hintText: widget.hintText,
+                hintStyle: const TextStyle(
+                  color: Color(0xFF979C9E),
+                  fontSize: 10,
+                  fontFamily: 'Inter',
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w400,
+                ),
+                labelText: widget.labelText,
+                labelStyle: const TextStyle(
+                  color: Color(0xFF979C9E),
+                  fontSize: 12,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w400,
+                ),
+                contentPadding: EdgeInsets.only(
+                    left: 16.34,
+                    right: (widget.labelText == 'Password') ? 45 : 16.34,
+                    top: 8.32,
+                    bottom: 8.32
+                ),
+                border: const OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(8.32)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.32),
+                  borderSide: const BorderSide(
+                    color: Colors.white, // Border color when enabled
+                    width: 1, // Border thickness when enabled
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.32),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF6b4eff), // Border color when focused
+                    width: 2.0, // Border thickness when focused
+                  ),
+                ),
+              ),
+            ),
+            Visibility(
+              visible: (widget.labelText == 'Enter Password' && widget.controller.text.isNotEmpty) ? true : false,
+              child: PasswordStrengthIndicator(
+                indicatorText: indicatorText,
+                indicatorColor: indicatorColor,
+                numberOfIndicator: numberOfIndicator,
+              ),
+            ),
+          ],
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16.34, vertical: 8.32),
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8.32)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.32),
-          borderSide: const BorderSide(
-            color: Colors.white, // Border color when enabled
-            width: 1, // Border thickness when enabled
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.32),
-          borderSide: const BorderSide(
-            color: Color(0xFF6b4eff), // Border color when focused
-            width: 2.0, // Border thickness when focused
-          ),
-        ),
-      ),
+        Visibility(
+          visible: widget.labelText.contains('Password') ? true : false,
+          child: Positioned(
+            right: 0,
+            child: IconButton(
+              onPressed: (){
+                setState(() {
+                  isObscured = !isObscured;
+                });
+              },
+              icon: (isObscured) ? const Icon(Icons.visibility_off) : const Icon(Icons.visibility),
+            ),
+          )
+        )
+      ],
     );
   }
 }

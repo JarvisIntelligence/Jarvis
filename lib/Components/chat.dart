@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:clipboard/clipboard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +11,7 @@ import 'package:jarvis_app/Components/AIChats/AI_chat_history.dart';
 import 'package:jarvis_app/Components/cache_image.dart';
 import 'package:jarvis_app/Components/chat_bubble.dart';
 import 'package:jarvis_app/Components/Utilities/encrypter.dart';
+import 'package:jarvis_app/Components/send_message.dart';
 import 'package:lottie/lottie.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
@@ -48,10 +52,12 @@ class _ChatState extends State<Chat> {
   String currentReplyMessage = '';
   bool isLongPressed = false;
   int numberOfSelectedBubbles = 0;
+  int conversationCounter = 1;
   // Map to track chat selection state of each chat bubble
   Map<int, bool> isChatSelectedMap = {};
+  List<Widget> chatWidgets = [];
+  Map<String, dynamic> copyData = {};
 
-  // List<Map<String, dynamic>> userChat = [];
   List<Map<String, dynamic>> userChat = [
     {
       'Jun 6, 2024': [
@@ -318,7 +324,7 @@ class _ChatState extends State<Chat> {
   // Scroll to the bottom of the chat
   void scrollToBottom() {
     scrollController.scrollToIndex(
-      userChat.length - 1, // Scroll to the last index
+      chatWidgets.length, // Scroll to the last index
       preferPosition: AutoScrollPosition.end,
     );
   }
@@ -379,6 +385,7 @@ class _ChatState extends State<Chat> {
   }
 
   void increaseDecreaseNumberOfSelectedBubbles (String increaseOrDecrease) {
+    const storage = FlutterSecureStorage();
     setState(() {
       if (increaseOrDecrease == 'increase') {
         numberOfSelectedBubbles++;
@@ -386,6 +393,11 @@ class _ChatState extends State<Chat> {
         numberOfSelectedBubbles--;
         if (numberOfSelectedBubbles == 0){
           isLongPressed = !isLongPressed;
+          setState(() {
+            conversationCounter = 1;
+            copyData = {};
+          });
+          storage.delete(key: 'copy_data');
         }
       }
     });
@@ -408,10 +420,77 @@ class _ChatState extends State<Chat> {
     });
   }
 
-  void _deselectAllChats() {
+  Future<void> _deselectAllChats() async {
+    const storage = FlutterSecureStorage();
     setState(() {
       isChatSelectedMap.updateAll((key, value) => false);
+      conversationCounter = 1;
+      copyData = {};
     });
+    await storage.delete(key: 'copy_data');
+  }
+
+  Future<void> storeCopyDetailsSecureStorage(String entry) async {
+    const storage = FlutterSecureStorage();
+    // Generate the next conversation key
+    String key = 'conversation${conversationCounter++}';
+    if (copyData.containsKey(key)) {
+      copyData[key]!.add(entry);
+    } else {
+      copyData[key] = [entry];
+    }
+
+    String jsonString = jsonEncode(copyData);
+    await storage.write(key: 'copy_data', value: jsonString);
+  }
+
+  Future<void> removeCopyDetailSecureStorage(String entry) async {
+    const storage = FlutterSecureStorage();
+
+    bool isRemoved = false;
+    String keyToRemove = '';
+    String? jsonString = await storage.read(key: 'copy_data');
+
+    if (jsonString != null) {
+      Map<String, dynamic> storedData = jsonDecode(jsonString);
+      storedData.forEach((key, value) {
+        if (value is List) {
+          isRemoved = value.remove(entry);
+          if (isRemoved && value.isEmpty) {
+            keyToRemove = key;
+          }
+        }
+      });
+      storedData.remove(keyToRemove);
+      jsonString = jsonEncode(storedData);
+      await storage.write(key: 'copy_data', value: jsonString);
+    }
+  }
+
+  Future<void> copyMultipleMessagesToClipboard() async {
+    const storage = FlutterSecureStorage();
+    Map<String, dynamic> copyData = {};
+    String? jsonString = await storage.read(key: 'copy_data');
+
+    if (jsonString != null) {
+      copyData = jsonDecode(jsonString);
+    } else {
+      return;
+    }
+
+    // Collect all entries into a single string
+    StringBuffer allEntriesBuffer = StringBuffer();
+    copyData.forEach((key, values) {
+      for (var value in values) {
+        allEntriesBuffer.writeln(value);
+      }
+    });
+
+    // Convert the StringBuffer to a single string
+    String allEntries = allEntriesBuffer.toString();
+
+    // Copy the string to the clipboard
+    FlutterClipboard.copy(allEntries);
   }
 
   @override
@@ -437,7 +516,8 @@ class _ChatState extends State<Chat> {
           ),
           scrollToBottomButton(),
           copyMessage(),
-          messagesSelectedDisplay()
+          messagesSelectedDisplay(),
+          messagesSelectedOptions(),
         ],
       ),
       bottomNavigationBar: chatInputBar(),
@@ -559,7 +639,7 @@ class _ChatState extends State<Chat> {
   }
 
   Widget chatMessagesScreen() {
-    List<Widget> chatWidgets = [];
+    chatWidgets = [];
     bool isFirstDate = true;
     int index = 0;
 
@@ -577,6 +657,7 @@ class _ChatState extends State<Chat> {
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w400,
               ),
+              textAlign: TextAlign.center,
             ),
           ),
         );
@@ -587,7 +668,6 @@ class _ChatState extends State<Chat> {
           if (i < messages.length - 1) {
             hasDifferentSender = messages[i + 1]['isSender'] != message['isSender'];
           }
-
           // Capture the correct index for the closure
           final currentIndex = index;
           chatWidgets.add(
@@ -596,7 +676,6 @@ class _ChatState extends State<Chat> {
                 isSender: message['isSender'],
                 isStarred: message['isStarred'],
                 showCopyMessage: showCopyMessage,
-                chatName: 'Chat Name', // Replace with actual chatName
                 isGroup: widget.isGroup, // Replace with actual isGroup value if needed
                 chatTime: DateFormat('HH:mm').format(message['time']), // Replace with actual chatTime if needed
                 senderName: message['senderName'],
@@ -609,7 +688,10 @@ class _ChatState extends State<Chat> {
                 increaseDecreaseNumberOfSelectedBubbles: increaseDecreaseNumberOfSelectedBubbles,
                 numberOfSelectedBubbles: numberOfSelectedBubbles,
                 isChatSelected: isChatSelectedMap[currentIndex] ?? false,
-                changeIsChatSelected: () => changeIsChatSelected(currentIndex)
+                changeIsChatSelected: () => changeIsChatSelected(currentIndex),
+                storeCopyDetailsSecureStorage: storeCopyDetailsSecureStorage,
+                chatDate: formattedDate,
+                removeCopyDetailSecureStorage: removeCopyDetailSecureStorage,
             ),
           );
           index++;
@@ -618,7 +700,7 @@ class _ChatState extends State<Chat> {
     }
 
     if (chatWidgets.isNotEmpty) {
-      chatWidgets.add(const SizedBox(height: 30));
+      chatWidgets.add(const SizedBox(height: 20));
     }
 
     return Expanded(
@@ -626,6 +708,7 @@ class _ChatState extends State<Chat> {
           ? buildEmptyChat()
           : buildChat(chatWidgets),
     );
+
   }
 
   Widget buildEmptyChat() {
@@ -655,15 +738,13 @@ class _ChatState extends State<Chat> {
       child: ListView.builder(
         padding: EdgeInsets.zero,
         controller: scrollController,
-        itemCount: userChat.length,
+        itemCount: chatWidgets.length,
         itemBuilder: (context, index) {
           return AutoScrollTag(
             index: index,
             controller: scrollController,
             key: ValueKey(index), // Unique key for ListView.builder
-            child: Column(
-                children: chatWidgets
-            ),
+            child: chatWidgets[index]
           );
         },
       ),
@@ -703,8 +784,11 @@ class _ChatState extends State<Chat> {
                   color: const Color(0xFFE3E5E5),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text('Message copied!',
-                  style: TextStyle(
+                child: Text(
+                  (numberOfSelectedBubbles > 1)
+                      ? '$numberOfSelectedBubbles Messages copied!'
+                      : 'Message copied!',
+                  style: const TextStyle(
                       fontSize: 10,
                       color: Colors.black,
                       fontFamily: 'Inter'
@@ -795,6 +879,9 @@ class _ChatState extends State<Chat> {
                             child: TextField(
                               enableSuggestions: false,
                               autocorrect: false,
+                              maxLines: null,
+                              keyboardType: TextInputType.multiline,
+                              textInputAction: TextInputAction.newline,
                               controller: messageController,
                               focusNode: focusNode,
                               style: const TextStyle(color: Color(0xFFE7E7FF),
@@ -813,7 +900,18 @@ class _ChatState extends State<Chat> {
                             ),
                           ),
                           IconButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                String message = messageController.text;
+                                if (message.isNotEmpty) {
+                                  setState(() {
+                                    List<Map<String, dynamic>> updatedUserChat = SendMessage().sendMessageBubbleChat(List.from(userChat), message);
+                                    userChat = updatedUserChat;
+                                    _initializeChatSelectionState();
+                                    scrollToBottom();
+                                  });
+                                  messageController.clear();
+                                }
+                              },
                               icon: SvgPicture.asset('assets/icons/send_icon.svg',
                                 height: 30,)
                           )
@@ -1010,6 +1108,64 @@ class _ChatState extends State<Chat> {
           ),
         ],
       )
+    );
+  }
+
+  Widget messagesSelectedOptions() {
+    return Visibility(
+        visible: (numberOfSelectedBubbles > 1) ? true : false,
+        child: Positioned(
+            top: 260,
+            right: 20,
+            child: Container(
+              width: 40,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              decoration: BoxDecoration(
+                color: const Color(0xFF303437),
+                borderRadius: BorderRadius.circular(5), // Curved edges
+              ),
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: (){},
+                    child: SvgPicture.asset('assets/icons/corner_up_right_icon.svg', width: 14,),
+                  ), // forward
+                  const SizedBox(height: 20,),
+                  GestureDetector(
+                    onTap: () {
+                      copyMultipleMessagesToClipboard();
+                      showCopyMessage();
+                      setState(() {
+                        isLongPressed = !isLongPressed;
+                        _deselectAllChats();
+                      });
+                      Timer(const Duration(seconds: 1), () {
+                        setState(() {
+                          numberOfSelectedBubbles = 0; //So that the showCopyMessage can display before setting the value to 0
+                        });
+                      });
+                    },
+                    child: const Icon(Icons.copy, size: 12, color: Color(0xFF979C9E),),
+                  ), // copy
+                  const SizedBox(height: 20,),
+                  GestureDetector(
+                      onTap: (){},
+                      child: Image.asset('assets/icons/push_pin_icon.png', width: 14, color: const Color(0xFF979C9E),)
+                  ), // pin
+                  const SizedBox(height: 20,),
+                  GestureDetector(
+                    onTap: (){
+
+                    },
+                    child: const Icon(Icons.star_border_outlined,
+                      size: 14,
+                      color: Color(0xFF979C9E),
+                    ),
+                  ), // star
+                ],
+              ),
+            )
+        )
     );
   }
 }

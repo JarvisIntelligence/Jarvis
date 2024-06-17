@@ -1,22 +1,38 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jarvis_app/Components/chat.dart';
 import 'package:jarvis_app/Pages/add_new_users_page.dart';
-import 'package:jarvis_app/Pages/auth_page.dart';
 import 'package:jarvis_app/Pages/login_page.dart';
 import 'package:jarvis_app/Pages/signup_page.dart';
 import 'package:jarvis_app/Pages/home_page.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final bool isLoggedIn = await checkLoginStatus();
+  runApp(MyApp(isLoggedIn: isLoggedIn));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({Key? key, required this.isLoggedIn}) : super(key: key);
+
+  final bool isLoggedIn;
 
   @override
   State<MyApp> createState() => _MyAppState();
+}
+
+Future<bool> checkLoginStatus() async {
+  const storage = FlutterSecureStorage();
+
+  String? jsonString = await storage.read(key: 'user_data');
+  if (jsonString != null) {
+    return jsonDecode(jsonString)['isLogged'];
+  } else {
+    return false;
+  }
 }
 
 _resetStyle() {
@@ -37,31 +53,24 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _resetStyle();
     _router = _configureRouter();
+
   }
 
   GoRouter _configureRouter() {
     return GoRouter(
-      initialLocation: '/auth',
+      initialLocation: widget.isLoggedIn ? '/homepage' : '/login',
       routes: <RouteBase>[
         GoRoute(
-          path: '/auth',
+          path: '/login',
           builder: (BuildContext context, GoRouterState state) {
-            return const AuthPage();
+            return const LoginPage();
           },
-          routes: <RouteBase>[
-            GoRoute(
-              path: 'login',
-              builder: (BuildContext context, GoRouterState state) {
-                return const LoginPage();
-              },
-            ),
-            GoRoute(
-              path: 'signup',
-              builder: (BuildContext context, GoRouterState state) {
-                return const SignupPage();
-              },
-            ),
-          ],
+        ),
+        GoRoute(
+          path: '/signup',
+          builder: (BuildContext context, GoRouterState state) {
+            return const SignupPage();
+          },
         ),
         GoRoute(
           path: '/homepage',

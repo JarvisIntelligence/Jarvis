@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jarvis_app/Components/home_chat.dart';
@@ -46,7 +47,7 @@ class _HomePageState extends State<HomePage> {
 
   // Searches the user chats for the person's name typed
   List<Map<String, dynamic>> searchList(List<Map<String, dynamic>> list, String query) {
-    return list.where((item) => item['name'].contains(query)).toList();
+    return list.where((item) => item['name'].toLowerCase().contains(query.toLowerCase())).toList();
   }
 
   /// This has to happen only once per app
@@ -136,7 +137,8 @@ class _HomePageState extends State<HomePage> {
                 chatListBody(userChatsWidgets, filteredListWidgets),
               ],
             ),
-            addChatButton()
+            addChatButton(),
+            signOutButton()
           ],
         )
     );
@@ -368,6 +370,35 @@ class _HomePageState extends State<HomePage> {
               backgroundColor: WidgetStateProperty.all<Color>(const Color(0xFF6B4EFF)),
             ),
             child: const Icon(Icons.add, size: 15, color: Color(0xFFC9F0FF),)
+        )
+    );
+  }
+
+  Widget signOutButton() {
+    return Positioned(
+        bottom: 50,
+        left: 20,
+        child: ElevatedButton(
+            onPressed: () async {
+              const storage = FlutterSecureStorage();
+              await storage.delete(key: 'user_data');
+              InAppNotifications.show(
+                  description:
+                  'Account logged out successfully',
+                  onTap: () {}
+              );
+              context.go('/login');
+            },
+            style: ButtonStyle(
+              shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10), // Adjust the radius as per your requirement
+                ),
+              ),
+              fixedSize: WidgetStateProperty.all(const Size(10, 60)), // Set the exact size
+              backgroundColor: WidgetStateProperty.all<Color>(Colors.red),
+            ),
+            child: const Icon(Icons.logout, size: 15, color: Color(0xFFC9F0FF),)
         )
     );
   }
