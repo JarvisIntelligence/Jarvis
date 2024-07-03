@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:jarvis_app/Components/textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -67,13 +68,26 @@ class _LoginPageState extends State<LoginPage> {
       await _secureStorageHelper.saveListData('userChatList', []);
       await storeUserDetailsSecureStorage();
       updateProgressVisible();
-      context.go('/homepage');
+      if (mounted) {
+        context.go('/homepage');
+      }
     } else{
       updateProgressVisible();
     }
   }
 
-  void validateUsernameAndPassword() {
+  Future<bool> checkInternetConnection() async {
+    bool isNetworkOn = await InternetConnectionChecker().hasConnection;
+    if(!isNetworkOn){
+      InAppNotifications.show(
+          description: "Please check your internet connection, you can't log into your account at the moment",
+          onTap: (){}
+      );
+    }
+    return isNetworkOn;
+  }
+
+  Future<void> validateUsernameAndPassword() async {
     if (_usernameController.text.isEmpty || _passwordController.text.isEmpty){
       InAppNotifications.show(
           description:
@@ -81,8 +95,11 @@ class _LoginPageState extends State<LoginPage> {
           onTap: () {}
       );
     } else {
-      FocusManager.instance.primaryFocus?.unfocus();
-      login();
+      bool isNetworkOn = await checkInternetConnection();
+      if(isNetworkOn){
+        FocusManager.instance.primaryFocus?.unfocus();
+        login();
+      }
     }
   }
 
@@ -344,12 +361,15 @@ class _LoginPageState extends State<LoginPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: (){
-                      _controller.animateToPage(
-                          0,
-                          duration: const Duration(milliseconds: 500),
-                          curve: Curves.easeInOut
-                      );
+                    onPressed: () async {
+                      bool isNetworkOn = await checkInternetConnection();
+                      if(isNetworkOn){
+                        _controller.animateToPage(
+                            0,
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeInOut
+                        );
+                      }
                     },
                     style: ButtonStyle(
                       shape: WidgetStateProperty.all<OutlinedBorder>(

@@ -5,6 +5,7 @@
         <!-- Set the splash screen background -->
         <item name="windowSplashScreenBackground">@color/launch_background</item>
         <!-- Set the splash screen icon -->
+        <!-- <item name="windowSplashScreenAnimatedIcon">@drawable/test</item> -->
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash</item>
         <!-- Set the animation duration -->
         <item name="windowSplashScreenAnimationDuration">1000</item>

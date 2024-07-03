@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:jarvis_app/Components/Utilities/register_login_user.dart';
 import 'package:jarvis_app/Components/textfield.dart';
 import 'package:flutter/material.dart';
@@ -309,7 +310,7 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  void validatePassword() {
+  Future<void> validatePassword() async {
     if (_passwordController.text.isEmpty){
       InAppNotifications.show(
           description:
@@ -327,9 +328,23 @@ class _SignupPageState extends State<SignupPage> {
         return;
       }
     }
-    FocusManager.instance.primaryFocus?.unfocus();
-    userRegisterJsonData['password'] = _passwordController.text;
-    signUp();
+    bool isNetworkOn = await checkInternetConnection();
+    if(isNetworkOn){
+      FocusManager.instance.primaryFocus?.unfocus();
+      userRegisterJsonData['password'] = _passwordController.text;
+      signUp();
+    }
+  }
+
+  Future<bool> checkInternetConnection() async {
+    bool isNetworkOn = await InternetConnectionChecker().hasConnection;
+    if(!isNetworkOn){
+      InAppNotifications.show(
+          description: "Please check your internet connection, you can't create an account at the moment",
+          onTap: (){}
+      );
+    }
+    return isNetworkOn;
   }
 
   Future<void> signUp() async {
@@ -339,7 +354,9 @@ class _SignupPageState extends State<SignupPage> {
       await _secureStorageHelper.saveListData('userChatList', []);
       await storeUserDetailsSecureStorage();
       updateProgressVisible();
-      context.go('/homepage');
+      if (mounted) {
+        context.go('/homepage');
+      }
     } else{
       updateProgressVisible();
     }

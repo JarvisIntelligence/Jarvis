@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
@@ -22,7 +23,8 @@ class SecureStorageHelper {
     _encrypter = encrypt.Encrypter(encrypt.AES(_key));
   }
 
-  static Future<encrypt.Key> _getOrGenerateKey(FlutterSecureStorage secureStorage) async {
+  static Future<encrypt.Key> _getOrGenerateKey(
+      FlutterSecureStorage secureStorage) async {
     String? keyString = await secureStorage.read(key: 'encryption_key');
     if (keyString == null) {
       final random = Random.secure();
@@ -69,31 +71,37 @@ class SecureStorageHelper {
   }
 
   Future<void> saveListData(String key, List<Map<String, dynamic>> data) async {
-    final jsonData = jsonEncode(data.map((map) {
-      final updatedMap = Map<String, dynamic>.from(map);
-      updatedMap.forEach((key, value) {
-        if (value is DateTime) {
-          updatedMap[key] = value.toIso8601String();
-        }
-      });
-      return updatedMap;
-    }).toList());
-
+    String jsonData = jsonEncode(data, toEncodable: (dynamic value) {
+      if (value is File) {
+        return value.path; // Convert File object to its path
+      }
+      return value.toString(); // Handle other non-serializable types if needed
+    });
     await saveData(key, jsonData);
   }
 
   Future<List<Map<String, dynamic>>?> readListData(String key) async {
-    final jsonData = await readData(key);
+    final jsonData = await readData(key); // Your function to read the JSON string
     if (jsonData == null) return null;
 
     final List<dynamic> decoded = jsonDecode(jsonData);
     return decoded.map((item) {
       final map = Map<String, dynamic>.from(item);
-      map.forEach((key, value) {
-        if (value is String && DateTime.tryParse(value) != null) {
-          map[key] = DateTime.parse(value);
+
+      // Traverse through the nested structure to convert paths back to File objects
+      map.forEach((date, messages) {
+        if (messages is List) {
+          for (var message in messages) {
+            if (message is Map<String, dynamic> && message.containsKey('file')) {
+              final filePath = message['file'];
+              if (filePath is String) {
+                message['file'] = File(filePath);
+              }
+            }
+          }
         }
       });
+
       return map;
     }).toList();
   }

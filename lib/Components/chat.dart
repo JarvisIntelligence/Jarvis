@@ -1,22 +1,31 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:clipboard/clipboard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:jarvis_app/Components/AIChats/AI_chat_history.dart';
+import 'package:jarvis_app/Components/AIChats/ai_chat_history.dart';
+import 'package:jarvis_app/Components/Utilities/camera.dart';
+import 'package:jarvis_app/Components/Utilities/record_audio.dart';
 import 'package:jarvis_app/Components/cache_image.dart';
 import 'package:jarvis_app/Components/chat_bubble.dart';
 import 'package:jarvis_app/Components/Utilities/encrypter.dart';
-import 'package:jarvis_app/Components/send_message.dart';
+import 'package:jarvis_app/Components/Utilities/send_message.dart';
+import 'package:jarvis_app/Components/Utilities/user_chat_list_change_notifier.dart';
 import 'package:lottie/lottie.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/foundation.dart' as foundation;
-
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'Utilities/file_picker.dart';
 
 class Chat extends StatefulWidget {
   const Chat({super.key, required this.chatName,
@@ -42,7 +51,10 @@ class _ChatState extends State<Chat> {
   final SecureStorageHelper _secureStorageHelper = SecureStorageHelper();
   final AutoScrollController scrollController = AutoScrollController();
   final FocusNode focusNode = FocusNode();
+  final AudioPlayer audioPlayer = AudioPlayer();
+  final RecordAudio _recordAudio = RecordAudio();
   bool showScrollBottomButton = false;
+  bool isShowCameraOptions = false;
   bool emojiShowing = false;
   double keyboardHeight = 0.0;
   bool isCopyMessageVisible = false;
@@ -57,265 +69,80 @@ class _ChatState extends State<Chat> {
   Map<int, bool> isChatSelectedMap = {};
   List<Widget> chatWidgets = [];
   Map<String, dynamic> copyData = {};
+  bool _isRecording = false;
+  bool canPlayOrPauseAudio = false;
+  bool isPlaying = false;
+  bool isAudioPlaybackPaused = false;
+  bool isShowingRecordingOptions = false;
+  String _fileAudioName = '';
+  Duration currentRecordingDuration = Duration.zero;
+  Duration currentPosition = Duration.zero;
 
-  List<Map<String, dynamic>> userChat = [
-    {
-      'Jun 6, 2024': [
-        {
-          'isSender': true,
-          'isStarred': false,
-          'time': DateTime.parse('2024-06-05T08:15:00'),
-          'message': "Hey, are you coming to the gym later?",
-          'senderName': "Me",
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': false,
-          'isStarred': false,
-          'time': DateTime.parse('2024-06-05T08:20:00'),
-          'message': "Yes, I'll be there at 6 PM.",
-          'senderName': "Mia",
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': false,
-          'isStarred': true,
-          'time': DateTime.parse('2024-06-05T12:00:00'),
-          'message': 'Can we reschedule our meeting?',
-          'senderName': 'Sophia',
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': true,
-          'isStarred': false,
-          'time': DateTime.parse('2024-06-05T12:05:00'),
-          'message': 'Sure, how about tomorrow afternoon?',
-          'senderName': 'Me',
-          'isDelivered': true,
-          'isSent': true
-        },
-      ],
-      'Jun 7, 2024': [
-        {
-          'isSender': true,
-          'isStarred': true,
-          'time': DateTime.parse('2024-06-06T08:00:00'),
-          'message': "Morning! Ready for the meeting today?",
-          'senderName': "Me",
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': false,
-          'isStarred': true,
-          'time': DateTime.parse('2024-06-06T08:05:00'),
-          'message': "Yes, all set. Let's do this!",
-          'senderName': "Mason",
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': false,
-          'isStarred': false,
-          'time': DateTime.parse('2024-06-06T11:30:00'),
-          'message': 'Lunch break? Need a breather!',
-          'senderName': 'Lucas',
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': true,
-          'isStarred': false,
-          'time': DateTime.parse('2024-06-06T11:35:00'),
-          'message': "Definitely. Let's go to that new place nearby.",
-          'senderName': 'Me',
-          'isDelivered': true,
-          'isSent': true
-        },
-      ],
-      'Jun 8, 2024': [
-        {
-          'isSender': true,
-          'isStarred': true,
-          'time': DateTime.parse('2024-06-07T14:15:00'),
-          'message': "Just got back from my vacation. The beach was amazing!",
-          'senderName': "Me",
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': false,
-          'isStarred': false,
-          'time': DateTime.parse('2024-06-07T14:17:00'),
-          'message': "Wow, that sounds fantastic! Where did you go?",
-          'senderName': "Oliver",
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': true,
-          'isStarred': false,
-          'time': DateTime.parse('2024-06-07T15:00:00'),
-          'message': "Went to Hawaii. The sunsets were incredible!",
-          'senderName': "Me",
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': false,
-          'isStarred': true,
-          'time': DateTime.parse('2024-06-07T15:05:00'),
-          'message': "I've always wanted to visit Hawaii. Lucky you!",
-          'senderName': "Oliver",
-          'isDelivered': true,
-          'isSent': true
-        },
-      ],
-      'Jun 9, 2024': [
-        {
-          'isSender': false,
-          'isStarred': true,
-          'time': DateTime.parse('2024-06-08T09:00:00'),
-          'message': "Good morning! Did you finish the project?",
-          'senderName': "Sophia",
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': true,
-          'isStarred': false,
-          'time': DateTime.parse('2024-06-08T09:05:00'),
-          'message': "Good morning! Yes, I submitted it last night.",
-          'senderName': "Me",
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': false,
-          'isStarred': false,
-          'time': DateTime.parse('2024-06-08T18:30:00'),
-          'message': 'How about a movie tonight?',
-          'senderName': 'Mia',
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': true,
-          'isStarred': false,
-          'time': DateTime.parse('2024-06-08T18:35:00'),
-          'message': 'Sounds great! Which movie?',
-          'senderName': 'Me',
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': false,
-          'isStarred': true,
-          'time': DateTime.parse('2024-06-08T19:00:00'),
-          'message': 'How about the new superhero one?',
-          'senderName': 'Mia',
-          'isDelivered': true,
-          'isSent': true
-        },
-      ],
-      'Jun 10, 2024': [
-        {
-          'isSender': true,
-          'isStarred': true,
-          'time': DateTime.parse('2024-06-09T07:45:00'),
-          'message': "Did you see the news this morning?",
-          'senderName': "Me",
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': false,
-          'isStarred': true,
-          'time': DateTime.parse('2024-06-09T07:50:00'),
-          'message': "Yes, it's unbelievable!",
-          'senderName': "Ava",
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': false,
-          'isStarred': false,
-          'time': DateTime.parse('2024-06-09T12:15:00'),
-          'message': 'Are we still on for lunch?',
-          'senderName': 'Ethan',
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': true,
-          'isStarred': false,
-          'time': DateTime.parse('2024-06-09T12:20:00'),
-          'message': 'Absolutely! See you at 1 PM?',
-          'senderName': 'Me',
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': false,
-          'isStarred': false,
-          'time': DateTime.parse('2024-06-09T12:25:00'),
-          'message': "Perfect. I'll be there!",
-          'senderName': 'Ethan',
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': true,
-          'isStarred': true,
-          'time': DateTime.parse('2024-06-09T18:45:00'),
-          'message': "Did you get the email from the boss?",
-          'senderName': "Me",
-          'isDelivered': true,
-          'isSent': true
-        },
-        {
-          'isSender': false,
-          'isStarred': true,
-          'time': DateTime.parse('2024-06-09T18:50:00'),
-          'message': "Yes, looks like we have a new project to work on.",
-          'senderName': "James",
-          'isDelivered': true,
-          'isSent': true
-        },
-      ],
-    }
-  ];
+  late StreamSubscription<void> _playerFinishedSubscription;
+  late StreamSubscription<Duration> _positionSubscription;
+
+  List<Map<String, dynamic>> userChat = [];
 
   @override
   void initState() {
     super.initState();
-    // automatically moves the screen to the bottom when a chat is opened
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      scrollController.jumpTo(scrollController.position.maxScrollExtent);
-    });
-    scrollController.addListener(scrollListener);
-    _initializeChatSelectionState();
     init();
   }
 
   @override
   void dispose() {
     scrollController.removeListener(scrollListener);
+    focusNode.removeListener(focusNodeListener);
     scrollController.dispose();
     focusNode.dispose();
+    RecordAudio().dispose();
     super.dispose();
   }
 
   Future<void> init() async {
     // retrieve user's chat list from secure storage
-    List<Map<String, dynamic>>? test = await _secureStorageHelper.readListData(widget.id);
+    List<Map<String, dynamic>>? tempUserChat = await _secureStorageHelper.readListData(widget.id);
+    if(tempUserChat != null){
+      setState(() {
+        userChat = tempUserChat;
+      });
+    }
+    scrollController.addListener(scrollListener);
+    focusNode.addListener(focusNodeListener);
+    _initializeChatSelectionState();
+  }
+
+  Future<void> audioInit() async {
+    _playerFinishedSubscription = _recordAudio.onPlayerFinished.listen((_) {
+      setState(() {
+        isPlaying = false;
+      });
+    });
+    _positionSubscription = _recordAudio.onPositionChanged.listen((position) {
+      setState(() {
+        currentPosition = position;
+      });
+    });
+    _recordAudio.onRecordingDurationChanged.listen((duration) {
+      setState(() {
+        currentRecordingDuration = duration;
+      });
+    });
+  }
+
+  void focusNodeListener() {
+    if(focusNode.hasFocus){
+      if(emojiShowing){
+        SystemChannels.textInput.invokeMethod('TextInput.hide');
+      }
+      Future.delayed(const Duration(milliseconds: 500), () {
+        scrollToBottom();
+      });
+    }
   }
 
   void scrollListener() {
-    bool atBottom = scrollController.position.pixels == scrollController.position.maxScrollExtent;
+    bool atBottom = scrollController.position.pixels == scrollController.position.minScrollExtent;
     setState(() {
       showScrollBottomButton = !atBottom;
     });
@@ -323,9 +150,10 @@ class _ChatState extends State<Chat> {
 
   // Scroll to the bottom of the chat
   void scrollToBottom() {
-    scrollController.scrollToIndex(
-      chatWidgets.length, // Scroll to the last index
-      preferPosition: AutoScrollPosition.end,
+    scrollController.animateTo(
+      scrollController.position.minScrollExtent,
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.fastOutSlowIn
     );
   }
 
@@ -420,6 +248,38 @@ class _ChatState extends State<Chat> {
     });
   }
 
+  String formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$twoDigitMinutes:$twoDigitSeconds';
+  }
+
+  Future<void> sendAudioMessage() async {
+    setState(() {
+      isShowingRecordingOptions = false;
+    });
+    if(isPlaying){
+      await _recordAudio.stopAudioRecordingPlayback();
+    }
+    if(_isRecording){
+      await _recordAudio.stopAudioRecording(true);
+    }
+    Duration? duration;
+    duration = await SendMessage().getAudioRecordingDuration(_fileAudioName);
+    setState(() {
+      List<Map<String, dynamic>> updatedUserChat = SendMessage().sendAudioMessageBubbleChat(List.from(userChat), _fileAudioName, duration!);
+      userChat = updatedUserChat;
+      _initializeChatSelectionState();
+    });
+    audioPlayer.play(AssetSource('sound_effects/chat_received_sent.mp3'));
+    await resetAudioRecordingAndPlayback();
+    await updateUserChatInStorage();
+    if(widget.id != '0'){
+      checkIfChatIsInChatList();
+    }
+  }
+
   Future<void> _deselectAllChats() async {
     const storage = FlutterSecureStorage();
     setState(() {
@@ -493,6 +353,176 @@ class _ChatState extends State<Chat> {
     FlutterClipboard.copy(allEntries);
   }
 
+  Future<void> startAudioRecording() async {
+    await audioInit();
+    bool isInitialized = await _recordAudio.init();
+    if (isInitialized) {
+      _fileAudioName = await _recordAudio.startAudioRecording();
+      if(_fileAudioName != '') {
+        setState(() {
+          _isRecording = true;
+          isShowingRecordingOptions = true;
+        });
+      }
+    }
+  }
+
+  Future<void> stopAudioRecording() async {
+    await _recordAudio.stopAudioRecording(false);
+    setState(() {
+      _isRecording = false;
+      canPlayOrPauseAudio = true;
+    });
+  }
+
+  Future<void> playRecording() async {
+    await _recordAudio.playAudioRecordingPlayback(_fileAudioName);
+    setState(() {
+      isPlaying = true;
+      isAudioPlaybackPaused = false;
+    });
+  }
+
+  Future<void> pauseRecording() async {
+    await _recordAudio.pauseAudioRecording();
+    setState(() {
+      isPlaying = false;
+      isAudioPlaybackPaused = true;
+    });
+  }
+
+  Future<void> resetAudioRecordingAndPlayback () async {
+    setState(() {
+      _fileAudioName = '';
+      isPlaying = false;
+      isAudioPlaybackPaused = false;
+      canPlayOrPauseAudio = false;
+      currentRecordingDuration = Duration.zero;
+    });
+    _playerFinishedSubscription.cancel();
+    _positionSubscription.cancel();
+  }
+
+  Future<void> updateUserChatInStorage() async {
+    await _secureStorageHelper.saveListData(widget.id, userChat);
+  }
+
+  Map<String, dynamic> getLastMessage() {
+    if (userChat.isEmpty) return {};
+    // Get the last date's key
+    String lastDateKey = userChat.first.keys.last;
+    // Get the list of messages for the last date
+    List<Map<String, dynamic>> messages = List<Map<String, dynamic>>.from(userChat.first[lastDateKey]);
+
+    if (messages.isEmpty) return {};
+
+    // Get the last message
+    Map<String, dynamic> lastMessage = messages.last;
+    late String message;
+    String senderName = lastMessage['senderName'];
+    if(widget.isGroup){
+      if(lastMessage['message'] != ''){
+        message = '$senderName: ${lastMessage['message']}';
+      } else {
+        message = (lastMessage['messageType'] == 'audio') ? '$senderName: Audio Recording' : '$senderName: Image';
+      }
+    } else {
+      if(lastMessage['message'] != ''){
+        message = lastMessage['message'];
+      } else {
+        message = (lastMessage['messageType'] == 'audio') ? 'Audio Recording' : 'Image';
+      }
+    }
+
+    return {
+      'message': message,
+      'time': lastMessage['time'],
+    };
+  }
+
+  void saveUpdatedUserChatList(List<Map<String, dynamic>>? userChatList) {
+    Map<String, dynamic> lastMessageAndTime = getLastMessage();
+    String lastMessage = lastMessageAndTime['message'];
+    String lastMessageTime = lastMessageAndTime['time'];
+
+    Provider.of<UserChatListChangeNotifier>(context, listen: false).addItem(
+        chatId: widget.id,
+        userImage: widget.userImage, chatName: widget.chatName,
+        lastMessage: lastMessage, lastMessageTime: lastMessageTime, isGroup: widget.isGroup,
+        userImage2: widget.userImage2, numberOfUsers: widget.numberOfUsers,
+        userImage3: widget.userImage3, groupImage: widget.userImage,
+        notification: false
+    );
+  }
+
+  Future<void> checkIfChatIsInChatList() async {
+    List<Map<String, dynamic>>? userChatList = await _secureStorageHelper.readListData('userChatList');
+    if(userChatList == null) {
+      saveUpdatedUserChatList(userChatList);
+    } else {
+      saveUpdatedUserChatList(userChatList);
+    }
+  }
+
+  static Duration parseDuration(String duration) {
+    List<String> parts = duration.split(':');
+    int hours = int.parse(parts[0]);
+    int minutes = int.parse(parts[1]);
+    List<String> secondsParts = parts[2].split('.');
+    int seconds = int.parse(secondsParts[0]);
+    int microseconds = int.parse(secondsParts[1].padRight(6, '0'));
+    return Duration(hours: hours, minutes: minutes, seconds: seconds, microseconds: microseconds);
+  }
+
+  Future<void> checkInternetConnection() async {
+    bool isNetworkOn = await InternetConnectionChecker().hasConnection;
+    if(!isNetworkOn){
+      InAppNotifications.show(
+          description: "Please check your internet connection, you won't be able to send or receive messages",
+          onTap: (){}
+      );
+    }
+  }
+
+  Future<void> sendMediaMessage(Map<String, dynamic> details, List<Map<String, dynamic>> sendMedia) async {
+    if(details.isNotEmpty){
+      setState(() {
+        List<Map<String, dynamic>> updatedUserChat = sendMedia;
+        userChat = updatedUserChat;
+        _initializeChatSelectionState();
+      });
+      audioPlayer.play(AssetSource('sound_effects/chat_received_sent.mp3'));
+      scrollToBottom();
+      await updateUserChatInStorage();
+      if(widget.id != '0'){
+        await checkIfChatIsInChatList();
+      }
+      checkInternetConnection();
+    }
+    setState(() {
+      isShowCameraOptions = false;
+    });
+  }
+
+  Future<void> sendPlainMessage() async {
+    String message = messageController.text;
+    if (message.isNotEmpty) {
+      setState(() {
+        List<Map<String, dynamic>> updatedUserChat = SendMessage().sendMessageBubbleChat(List.from(userChat), message);
+        userChat = updatedUserChat;
+        _initializeChatSelectionState();
+      });
+      audioPlayer.play(AssetSource('sound_effects/chat_received_sent.mp3'));
+      scrollToBottom();
+      await updateUserChatInStorage();
+      if(widget.id != '0'){
+        await checkIfChatIsInChatList();
+      }
+      checkInternetConnection();
+      messageController.clear();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -508,16 +538,29 @@ class _ChatState extends State<Chat> {
       ),
       body: Stack(
         children: [
-          Column(
-            children: [
-              chatHeader(),
-              chatMessagesScreen()
-            ],
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: Column(
+              children: [
+                chatHeader(),
+                chatMessagesScreen()
+              ],
+            ),
           ),
-          scrollToBottomButton(),
+          Positioned(
+            bottom: 20,
+            right: (showScrollBottomButton) ? 10 : 24,
+            child: Column(
+              children: [
+                scrollToBottomButton(),
+                recordingOptions()
+              ],
+            )
+          ),
           copyMessage(),
           messagesSelectedDisplay(),
           messagesSelectedOptions(),
+          cameraOptions(),
         ],
       ),
       bottomNavigationBar: chatInputBar(),
@@ -639,9 +682,32 @@ class _ChatState extends State<Chat> {
   }
 
   Widget chatMessagesScreen() {
-    chatWidgets = [];
+    List<Widget> chatWidgets = [];
     bool isFirstDate = true;
+    String? previousDate;
     int index = 0;
+    Directory? appDocDirectory;
+
+    () async {
+      appDocDirectory = await getExternalStorageDirectory();
+    };
+    // setState(() {
+    //   // Clean up userChat by removing messages with non-existing files
+    //   for (var chatDateMap in userChat) {
+    //     chatDateMap.forEach((date, messages) {
+    //       messages.removeWhere((message) {
+    //         return message['file'] is File && !message['file'].existsSync() && (message['messageType'] != 'text' && message['messageType'] != 'audio');
+    //       });
+    //       // messages.removeWhere((message) {
+    //       //   String dirPath = '${appDocDirectory?.path}/Media/Audio Recordings/Sent';
+    //       //   return message['fileName'] != '' && !File('$dirPath/${message['fileName']}').existsSync();
+    //       // });
+    //     });
+    //   }
+    //   // Remove empty date entries after cleanup
+    //   userChat.removeWhere((chatDateMap) => chatDateMap.values.every((messages) => messages.isEmpty));
+    //   updateUserChatInStorage();
+    // });
 
     for (var chatDateMap in userChat) {
       chatDateMap.forEach((date, messages) {
@@ -653,7 +719,7 @@ class _ChatState extends State<Chat> {
               formattedDate,
               style: const TextStyle(
                 color: Color(0xFF979C9E),
-                fontSize: 10,
+                fontSize: 12,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w400,
               ),
@@ -662,36 +728,53 @@ class _ChatState extends State<Chat> {
           ),
         );
         isFirstDate = false;
+
         for (int i = 0; i < messages.length; i++) {
           var message = messages[i];
+          bool isNewDay = false;
+          if (previousDate == null || DateFormat.yMd().format(DateFormat('MMM d, y').parse(date)) != DateFormat.yMd().format(DateFormat('MMM d, y').parse(previousDate!))) {
+            isNewDay = true;
+          }
+          previousDate = date;
+
           bool hasDifferentSender = false;
           if (i < messages.length - 1) {
             hasDifferentSender = messages[i + 1]['isSender'] != message['isSender'];
           }
+
           // Capture the correct index for the closure
           final currentIndex = index;
           chatWidgets.add(
             ChatBubble(
-                message: message['message'],
-                isSender: message['isSender'],
-                isStarred: message['isStarred'],
-                showCopyMessage: showCopyMessage,
-                isGroup: widget.isGroup, // Replace with actual isGroup value if needed
-                chatTime: DateFormat('HH:mm').format(message['time']), // Replace with actual chatTime if needed
-                senderName: message['senderName'],
-                isDelivered: message['isDelivered'],
-                isSent: message['isSent'],
-                showReplyMessage: showReplyMessage,
-                hasDifferentSender: hasDifferentSender,
-                isLongPressed: isLongPressed,
-                changeIsLongPressed: changeIsLongPressed,
-                increaseDecreaseNumberOfSelectedBubbles: increaseDecreaseNumberOfSelectedBubbles,
-                numberOfSelectedBubbles: numberOfSelectedBubbles,
-                isChatSelected: isChatSelectedMap[currentIndex] ?? false,
-                changeIsChatSelected: () => changeIsChatSelected(currentIndex),
-                storeCopyDetailsSecureStorage: storeCopyDetailsSecureStorage,
-                chatDate: formattedDate,
-                removeCopyDetailSecureStorage: removeCopyDetailSecureStorage,
+              isNewDay: isNewDay,
+              message: message['message'],
+              fileName: message['fileName'],
+              isSender: message['isSender'],
+              isStarred: message['isStarred'],
+              showCopyMessage: showCopyMessage,
+              isGroup: widget.isGroup, // Replace with actual isGroup value if needed
+              chatTime: DateFormat('HH:mm').format(DateTime.parse(message['time'])), // Replace with actual chatTime if needed
+              senderName: message['senderName'],
+              isDelivered: message['isDelivered'],
+              isSent: message['isSent'],
+              isSeen: message['isSeen'],
+              messageType: message['messageType'],
+              duration: parseDuration(message['duration']),
+              showReplyMessage: showReplyMessage,
+              hasDifferentSender: hasDifferentSender,
+              isLongPressed: isLongPressed,
+              changeIsLongPressed: changeIsLongPressed,
+              increaseDecreaseNumberOfSelectedBubbles: increaseDecreaseNumberOfSelectedBubbles,
+              numberOfSelectedBubbles: numberOfSelectedBubbles,
+              isChatSelected: isChatSelectedMap[currentIndex] ?? false,
+              changeIsChatSelected: () => changeIsChatSelected(currentIndex),
+              storeCopyDetailsSecureStorage: storeCopyDetailsSecureStorage,
+              chatDate: formattedDate,
+              removeCopyDetailSecureStorage: removeCopyDetailSecureStorage,
+              file: message['file'],
+              extension: message['extension'],
+              size: message['size'],
+              fileLogo: message['fileLogo'],
             ),
           );
           index++;
@@ -699,16 +782,14 @@ class _ChatState extends State<Chat> {
       });
     }
 
-    if (chatWidgets.isNotEmpty) {
-      chatWidgets.add(const SizedBox(height: 20));
-    }
+    // Reverse the chatWidgets list
+    chatWidgets = chatWidgets.reversed.toList();
 
     return Expanded(
       child: (userChat.isEmpty)
           ? buildEmptyChat()
           : buildChat(chatWidgets),
     );
-
   }
 
   Widget buildEmptyChat() {
@@ -736,6 +817,7 @@ class _ChatState extends State<Chat> {
     return Padding(
       padding: const EdgeInsets.only(left: 10, right: 10, bottom: 0, top: 20),
       child: ListView.builder(
+        reverse: true,
         padding: EdgeInsets.zero,
         controller: scrollController,
         itemCount: chatWidgets.length,
@@ -754,20 +836,80 @@ class _ChatState extends State<Chat> {
   Widget scrollToBottomButton() {
     return Visibility(
       visible: (showScrollBottomButton) ? true : false,
-      child: Positioned(
-          bottom: 40,
-          right: 10,
-          child: ElevatedButton(
-            onPressed: () {
-              scrollToBottom();
-            },
-            style: ElevatedButton.styleFrom(
-              shape: const CircleBorder(),
-              backgroundColor: const Color(0xFF6B4EFF),
-            ),
-            child: const Icon(Icons.arrow_downward, color: Colors.white, size: 20,),
-          )
-      ),
+      child: ElevatedButton(
+        onPressed: () {
+          scrollToBottom();
+        },
+        style: ElevatedButton.styleFrom(
+          shape: const CircleBorder(),
+          backgroundColor: const Color(0xFF6B4EFF),
+        ),
+        child: const Icon(Icons.arrow_downward, color: Colors.white, size: 20,),
+      )
+    );
+  }
+
+  Widget recordingOptions() {
+    return Visibility(
+      visible: (isShowingRecordingOptions) ? true : false,
+      child: Container(
+        margin: const EdgeInsets.only(top: 10),
+        width: 40,
+        padding: const EdgeInsets.symmetric(vertical: 15),
+        decoration: BoxDecoration(
+          color: const Color(0xFF303437),
+          borderRadius: BorderRadius.circular(5), // Curved edges
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: () async {
+                setState(() {
+                  isShowingRecordingOptions = false;
+                });
+                if(isPlaying){
+                  await _recordAudio.stopAudioRecordingPlayback();
+                }
+                if(_isRecording){
+                  await _recordAudio.stopAudioRecording(true);
+                }
+                await _recordAudio.deleteAudioRecording(_fileAudioName);
+                resetAudioRecordingAndPlayback();
+              },
+              child: const Icon(Icons.delete, size: 16, color: Color(0xFF979C9E),),
+            ), // delete
+            const SizedBox(height: 20,),
+            GestureDetector(
+              onTap: () {
+                if(!_isRecording && canPlayOrPauseAudio){
+                  (isPlaying) ? pauseRecording() : playRecording();
+                  return;
+                }
+                stopAudioRecording();
+              },
+              child: Icon((_isRecording && !canPlayOrPauseAudio)
+                  ? Icons.stop
+                  : (isPlaying)
+                    ? Icons.pause
+                    : Icons.play_arrow, size: 18,
+                color: (_isRecording && !canPlayOrPauseAudio)
+                    ? Colors.red
+                    : (isPlaying)
+                      ? const Color(0xFF979C9E)
+                      : Colors.green,
+              ),
+            ), // stop/play
+            const SizedBox(height: 20,),
+            GestureDetector(
+                onTap: () async {
+                  await sendAudioMessage();
+                },
+                child: const Icon(Icons.send_rounded, size: 16, color: Color(0xFF6B4EFF),),
+            ), // send
+          ],
+        ),
+      )
     );
   }
 
@@ -830,11 +972,33 @@ class _ChatState extends State<Chat> {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      setState(() {
+                        isShowCameraOptions = !isShowCameraOptions;
+                      });
+                    },
                     icon: const Icon(Icons.camera_alt, color: Color(0xFFCDCFD0),),
                   ),
                   IconButton(
-                      onPressed: () {},
+                      onPressed: () async {
+                        List<Map<String, dynamic>> pickedFiles = await CustomFilePicker().pickFiles();
+                        List<Map<String, dynamic>> updatedUserChat = [];
+                        if (pickedFiles.isNotEmpty) {
+                          for (var file in pickedFiles) {
+                            updatedUserChat = SendMessage().sendFileMessageBubbleChat(userChat, file['extension'], file['name'], file['size'], file['fileLogo']);
+                            setState(() {
+                              userChat = updatedUserChat;
+                              _initializeChatSelectionState();
+                            });
+                          }
+                          scrollToBottom();
+                          await updateUserChatInStorage();
+                          if (widget.id != '0') {
+                            await checkIfChatIsInChatList();
+                          }
+                          checkInternetConnection();
+                        }
+                      },
                       icon: SvgPicture.asset(
                         'assets/icons/attach_icon.svg', height: 20,)
                   ),
@@ -863,7 +1027,7 @@ class _ChatState extends State<Chat> {
                                     emojiShowing = !emojiShowing;
                                   } else {
                                     // Wait for a brief moment to ensure the keyboard is hidden
-                                    Future.delayed(const Duration(milliseconds: 50), () {
+                                    Future.delayed(const Duration(milliseconds: 200), () {
                                       setState(() {
                                         emojiShowing = !emojiShowing; // Then, show the emoji selector
                                       });
@@ -900,17 +1064,8 @@ class _ChatState extends State<Chat> {
                             ),
                           ),
                           IconButton(
-                              onPressed: () {
-                                String message = messageController.text;
-                                if (message.isNotEmpty) {
-                                  setState(() {
-                                    List<Map<String, dynamic>> updatedUserChat = SendMessage().sendMessageBubbleChat(List.from(userChat), message);
-                                    userChat = updatedUserChat;
-                                    _initializeChatSelectionState();
-                                    scrollToBottom();
-                                  });
-                                  messageController.clear();
-                                }
+                              onPressed: () async {
+                                sendPlainMessage();
                               },
                               icon: SvgPicture.asset('assets/icons/send_icon.svg',
                                 height: 30,)
@@ -919,18 +1074,40 @@ class _ChatState extends State<Chat> {
                       ),
                     ),
                   ),
-                  IconButton(
-                      onPressed: () {
-                      },
-                      icon: const Icon(Icons.mic, color: Color(0xFFCDCFD0),)
+                  Visibility(
+                    visible: (isShowingRecordingOptions) ? false : true,
+                    child: IconButton(
+                        onPressed: startAudioRecording,
+                        icon: const Icon(Icons.mic, color: Color(0xFFCDCFD0),)
+                    ),
                   ),
+                  Visibility(
+                    visible:(isShowingRecordingOptions) ? true : false,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 22),
+                      child: (isPlaying || isAudioPlaybackPaused) ? Text(formatDuration(currentPosition), style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          color: Colors.white
+                      ),)
+                          : Text(formatDuration(currentRecordingDuration),
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          color: Colors.red
+                      ),),
+                    )
+                  )
                 ],
               ),
             ),
             Offstage(
               offstage: !emojiShowing,
-              child: SizedBox(
-                height: keyboardHeight,
+              child: Container(
+                constraints: const BoxConstraints(
+                  minHeight: 150
+                ),
+                height: (keyboardHeight != 0.0) ? keyboardHeight : 320,
                 child: EmojiPicker(
                   textEditingController: messageController,
                   config: Config(
@@ -1057,7 +1234,8 @@ class _ChatState extends State<Chat> {
 
   Widget messagesSelectedDisplay() {
     return Visibility(
-      visible: isLongPressed,
+      // visible: isLongPressed,
+      visible: numberOfSelectedBubbles > 0,
       child: Stack(
         children: [
           Positioned(
@@ -1115,7 +1293,7 @@ class _ChatState extends State<Chat> {
     return Visibility(
         visible: (numberOfSelectedBubbles > 1) ? true : false,
         child: Positioned(
-            top: 260,
+            top: 250,
             right: 20,
             child: Container(
               width: 40,
@@ -1165,6 +1343,135 @@ class _ChatState extends State<Chat> {
                 ],
               ),
             )
+        )
+    );
+  }
+
+  Widget cameraOptions() {
+    return Visibility(
+        visible: (isShowCameraOptions) ? true : false,
+        child: Positioned(
+          bottom: 0,
+          left: 8,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 20),
+            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+            decoration: BoxDecoration(
+              color: const Color(0xFF303437),
+              borderRadius: BorderRadius.circular(5), // Curved edges
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    Map<String, dynamic> photoDetails = await Camera().takeImageWithCamera();
+                    sendMediaMessage(photoDetails, SendMessage().sendPhotoMessageBubbleChat(userChat,
+                      photoDetails['file'], photoDetails['name'],
+                    ));
+                  },
+                  child: const Row(
+                    children: [
+                      Icon(Icons.camera, size: 18, color: Color(0xFF979C9E),),
+                      SizedBox(
+                        width: 5,
+                      ),
+                      Text('Photo Camera', style: TextStyle(
+                        color: Color(0xFF979C9E),
+                        fontFamily: 'Inter',
+                        fontSize: 10
+                      ),)
+                    ]
+                  )
+                ),
+                const SizedBox(height: 20,),
+                GestureDetector(
+                  onTap: () async {
+                    Map<String, dynamic> videoDetails = await Camera().takeVideoWithCamera();
+                    sendMediaMessage(videoDetails, SendMessage().sendVideoMessageBubbleChat(userChat,
+                      videoDetails['file'], videoDetails['name'],
+                    ));
+                  },
+                  child: const Row(
+                      children: [
+                        Icon(Icons.video_camera_back, size: 18, color: Color(0xFF979C9E),),
+                        SizedBox(
+                          width: 5,
+                        ),
+                        Text('Video Camera', style: TextStyle(
+                          color: Color(0xFF979C9E),
+                          fontFamily: 'Inter',
+                          fontSize: 10
+                        ),)
+                      ]
+                  ),
+                ), //take video//take picture
+                const SizedBox(height: 20,),
+                GestureDetector(
+                  onTap: () async {
+                    Map<String, dynamic> photoVideoDetails = await Camera().getMediaFromFolder();
+                    sendMediaMessage(photoVideoDetails, SendMessage().sendMediaMessageBubbleChat(userChat,
+                      photoVideoDetails['file'], photoVideoDetails['name'], photoVideoDetails['mediaType']
+                    ));
+                  },
+                  child: const Row(
+                      children: [
+                        Icon(Icons.image, size: 18, color: Color(0xFF979C9E),),
+                        SizedBox(
+                          width: 5,
+                        ),
+                        Text('Attach Single Media', style: TextStyle(
+                          color: Color(0xFF979C9E),
+                          fontFamily: 'Inter',
+                          fontSize: 10
+                        ),)
+                      ]
+                  ),
+                ), //pick from files
+                const SizedBox(height: 20,),
+                GestureDetector(
+                  onTap: () async {
+                    List<Map<String, dynamic>> mediaDetails = await Camera().getMultipleMediaFromFolder();
+                    List<Map<String, dynamic>> updatedUserChat = [];
+                    if (mediaDetails.isNotEmpty) {
+                      for (var mediaDetail in mediaDetails) {
+                        updatedUserChat = SendMessage().sendMediaMessageBubbleChat(userChat,
+                          mediaDetail['file'], mediaDetail['name'], mediaDetail['mediaType']
+                        );
+                        setState(() {
+                          userChat = updatedUserChat;
+                          _initializeChatSelectionState();
+                        });
+                      }
+                      scrollToBottom();
+                      await updateUserChatInStorage();
+                      if (widget.id != '0') {
+                        await checkIfChatIsInChatList();
+                      }
+                      checkInternetConnection();
+                    }
+                    setState(() {
+                      isShowCameraOptions = false;
+                    });
+                  },
+
+                  child: const Row(
+                      children: [
+                        Icon(Icons.perm_media, size: 18, color: Color(0xFF979C9E),),
+                        SizedBox(
+                          width: 5,
+                        ),
+                        Text('Attach Multiple Media', style: TextStyle(
+                          color: Color(0xFF979C9E),
+                          fontFamily: 'Inter',
+                          fontSize: 10
+                        ),)
+                      ]
+                  ),
+                ),
+              ],
+            ),
+          ),
         )
     );
   }

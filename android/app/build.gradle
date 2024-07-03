@@ -44,20 +44,21 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Specify your own unique Application ID
         applicationId "com.jarvisintelligence.jarvis_app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-//        minSdkVersion flutter.minSdkVersion
+
+        // Define the minimum and target SDK versions
         minSdkVersion 21
         targetSdkVersion flutter.targetSdkVersion
+
+        // Version code and name
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
+            // Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
         }
@@ -69,5 +70,6 @@ flutter {
 }
 
 dependencies {
+    implementation 'androidx.core:core-splashscreen:1.0.0-beta02'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }

@@ -37,7 +37,6 @@ class RegisterLoginUser {
         'Registration failed. A system error occurred while registering.',
         onTap: () {}
       );
-      print('Error: $e');
     }
     return false;
   }
@@ -72,10 +71,9 @@ class RegisterLoginUser {
     } catch (e) {
       InAppNotifications.show(
           description:
-          'Registration failed. A system error occurred while registering.',
+          'Login failed. A system error occurred while trying to log you in.',
           onTap: () {}
       );
-      print('Error: $e');
     }
     return false;
   }

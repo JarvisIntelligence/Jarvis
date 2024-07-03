@@ -550,7 +550,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                     child: Column(
                       children: [
                         Lottie.asset('assets/lottie_animations/nothing_found_animation.json', width: 80),
-                        Text((_searchFocusNode.hasFocus) ? 'Search result not found' : 'You have no recent chats', style: TextStyle(color: Color(0xFFCDCFD0), fontFamily: 'Inter', fontSize: 8),)
+                        Text((_searchFocusNode.hasFocus) ? 'Search result not found' : 'You have no recent chats', style: const TextStyle(color: Color(0xFFCDCFD0), fontFamily: 'Inter', fontSize: 8),)
                       ],
                     ),
                   )

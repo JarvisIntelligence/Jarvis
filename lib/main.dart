@@ -3,16 +3,41 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jarvis_app/Components/chat.dart';
+import 'package:jarvis_app/Components/Utilities/user_chat_list_change_notifier.dart';
 import 'package:jarvis_app/Pages/add_new_users_page.dart';
 import 'package:jarvis_app/Pages/login_page.dart';
 import 'package:jarvis_app/Pages/signup_page.dart';
 import 'package:jarvis_app/Pages/home_page.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final bool isLoggedIn = await checkLoginStatus();
-  runApp(MyApp(isLoggedIn: isLoggedIn));
+  await _precacheAssets();
+  runApp(
+      // MyApp(isLoggedIn: isLoggedIn)
+    ChangeNotifierProvider(
+      create: (context) => UserChatListChangeNotifier(),
+      child: MyApp(isLoggedIn: isLoggedIn)
+    ),
+  );
+}
+
+Future<void> _precacheAssets() async {
+  await Future.wait([
+    precacheSvgPicture('assets/icons/ai_icon.svg'),
+    precacheSvgPicture('assets/icons/logo.svg'),
+    precacheSvgPicture('assets/icons/google.svg'),
+    precacheSvgPicture('assets/icons/ai_logo.svg'),
+    precacheSvgPicture('assets/icons/logo_name.svg'),
+  ]);
+}
+
+Future precacheSvgPicture(String svgPath) async {
+  final logo = SvgAssetLoader(svgPath);
+  await svg.cache.putIfAbsent(logo.cacheKey(null), () => logo.loadBytes(null));
 }
 
 class MyApp extends StatefulWidget {
@@ -53,7 +78,6 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _resetStyle();
     _router = _configureRouter();
-
   }
 
   GoRouter _configureRouter() {

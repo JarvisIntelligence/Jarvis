@@ -4,11 +4,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jarvis_app/Components/home_chat.dart';
+import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:jarvis_app/Components/Utilities/encrypter.dart';
 import 'package:lottie/lottie.dart';
 
+import '../Components/Utilities/user_chat_list_change_notifier.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,24 +27,24 @@ class _HomePageState extends State<HomePage> {
   bool _speechEnabled = false;
   String _lastWords = '';
   List<Map<String, dynamic>> filteredList = [];
-  List<Map<String, dynamic>> userChatList = [];
+
+  late Future<LottieComposition> _lottieComposition;
 
   @override
   void initState() {
     super.initState();
+    _lottieComposition = _loadLottieComposition();
     init();
   }
 
   Future<void> init() async {
-    // retrieve user's chat list from secure storage
-    List<Map<String, dynamic>>? test = await _secureStorageHelper.readListData('userChatList');
-    setState(() {
-      if (test != null){
-        userChatList = test;
-      } else{
-        userChatList = [];
-      }
-    });
+    // Initial load from secure storage
+    final listNotifier = Provider.of<UserChatListChangeNotifier>(context, listen: false);
+    await listNotifier.loadInitialData();
+  }
+
+  Future<LottieComposition> _loadLottieComposition() async {
+    return await AssetLottie('assets/lottie_animations/add_friend_animation.json').load();
   }
 
   // Searches the user chats for the person's name typed
@@ -51,7 +53,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   /// This has to happen only once per app
-  _initSpeech() async {
+  Future<void> _initSpeech() async {
     _speechEnabled = await _speechToText.initialize();
     setState(() {});
   }
@@ -62,7 +64,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _lastWords = result.recognizedWords;
       _searchController.text = _lastWords;
-      filteredList = searchList(userChatList, _lastWords);
+      filteredList = searchList(context.read<UserChatListChangeNotifier>().userChatList, _lastWords);
     });
   }
 
@@ -81,11 +83,15 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Use Provider.of to listen to changes and rebuild the UI
+    var listNotifier = Provider.of<UserChatListChangeNotifier>(context, listen: true);
+    var userChatList = listNotifier.userChatList;
+
     // Sort userChats by lastMessageTime in descending order
     userChatList.sort((a, b) => a['lastMessageTime'].compareTo(b['lastMessageTime']));
-    List <Widget> filteredListWidgets;
+    List<Widget> filteredListWidgets;
 
-    List <Widget> userChatsWidgets = userChatList.map((entry) => HomeChat(
+    List<Widget> userChatsWidgets = userChatList.map((entry) => HomeChat(
         notification: entry['notification'],
         userImage: entry['userImage'],
         userImage2: entry['userImage2'],
@@ -94,7 +100,7 @@ class _HomePageState extends State<HomePage> {
         groupImage: entry['groupImage'],
         name: entry['name'],
         lastMessage: entry['lastMessage'],
-        lastMessageTime: entry['lastMessageTime'],
+        lastMessageTime: DateTime.parse(entry['lastMessageTime']),
         isGroup: entry['isGroup'],
         id: entry['id']
     )).toList();
@@ -121,7 +127,7 @@ class _HomePageState extends State<HomePage> {
         groupImage: entry['groupImage'],
         name: entry['name'],
         lastMessage: entry['lastMessage'],
-        lastMessageTime: entry['lastMessageTime'],
+        lastMessageTime: DateTime.parse(entry['lastMessageTime']),
         isGroup: entry['isGroup'],
         id: entry['id'],
       )).toList();
@@ -138,7 +144,7 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             addChatButton(),
-            signOutButton()
+            // signOutButton()
           ],
         )
     );
@@ -192,7 +198,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(
               height: 10,
             ),
-            aiChatBody()//AI Chat
+            aiChatBody() //AI Chat
           ],
         ),
       ),
@@ -227,7 +233,8 @@ class _HomePageState extends State<HomePage> {
                           maxLines: 1,
                           style: TextStyle(color: Color(0xFFCDCFD0), fontSize: 10, fontWeight: FontWeight.w400, fontFamily: 'Inter'),
                         ),
-                      )                                  ],
+                      )
+                    ],
                   ),
                 ],
               ),
@@ -241,7 +248,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget searchChatListBody(){
+  Widget searchChatListBody() {
     return Container(
       padding: const EdgeInsets.only(left: 10),
       decoration: BoxDecoration(
@@ -260,7 +267,7 @@ class _HomePageState extends State<HomePage> {
               autocorrect: false,
               onChanged: (a) {
                 setState(() {
-                  filteredList = searchList(userChatList, a);
+                  filteredList = searchList(context.read<UserChatListChangeNotifier>().userChatList, a);
                 });
               },
               focusNode: _searchFocusNode,
@@ -288,13 +295,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget chatListBody(List<Widget> userChatsWidgets, List<Widget> filteredListWidgets) {
+    var listNotifier = Provider.of<UserChatListChangeNotifier>(context, listen: true);
+    var userChatList = listNotifier.userChatList;
+
     return Expanded(
       child: SingleChildScrollView(
-          child: Column(
-            children: (userChatList.isEmpty)
-                ? [userChatListEmpty()]
-                : userChatListNotEmpty(userChatsWidgets, filteredListWidgets),
-          ),
+        child: Column(
+          children: (userChatList.isEmpty)
+              ? [userChatListEmpty()]
+              : userChatListNotEmpty(userChatsWidgets, filteredListWidgets),
+        ),
       ),
     );
   }
@@ -304,7 +314,20 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.only(top: 20),
       child: Column(
         children: [
-          Lottie.asset('assets/lottie_animations/add_friend_animation.json', width: 80),
+          FutureBuilder<LottieComposition>(
+            future: _lottieComposition,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Error loading animation'));
+                } else {
+                  return Lottie(composition: snapshot.data, width: 80,);
+                }
+              } else {
+                return const Center(child: CircularProgressIndicator());
+              }
+            },
+          ),
           const SizedBox(height: 10,),
           const Text('Add a friend or group to start chatting', style: TextStyle(color: Color(0xFFCDCFD0), fontFamily: 'Inter', fontSize: 8),)
         ],
@@ -339,38 +362,36 @@ class _HomePageState extends State<HomePage> {
   Widget userChatEncryptionMessage() {
     return (_searchController.text == '')
         ? const Padding(
-          padding: EdgeInsets.only(bottom: 50, top: 30),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.lock_outline, color: Color(0xFFCDCFD0), size: 15,),
-              SizedBox(width: 10,),
-              Text('Your personal chats are encrypted', style: TextStyle(color: Color(0xFFCDCFD0), fontFamily: 'Inter', fontSize: 10),)
-            ],
-          ),
+      padding: EdgeInsets.only(bottom: 50, top: 30),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.lock_outline, color: Color(0xFFCDCFD0), size: 15,),
+          SizedBox(width: 10,),
+          Text('Your personal chats are encrypted', style: TextStyle(color: Color(0xFFCDCFD0), fontFamily: 'Inter', fontSize: 10),)
+        ],
+      ),
     )
         : const SizedBox.shrink();
   }
 
   Widget addChatButton() {
     return Positioned(
-        bottom: 50,
-        right: 20,
-        child: ElevatedButton(
-            onPressed: () {
-              context.go('/homepage/addnewusers');
-            },
-            style: ButtonStyle(
-              shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10), // Adjust the radius as per your requirement
-                ),
-              ),
-              fixedSize: WidgetStateProperty.all(const Size(10, 60)), // Set the exact size
-              backgroundColor: WidgetStateProperty.all<Color>(const Color(0xFF6B4EFF)),
-            ),
-            child: const Icon(Icons.add, size: 15, color: Color(0xFFC9F0FF),)
-        )
+      bottom: 50,
+      right: 20,
+      child: ElevatedButton(
+        onPressed: () {
+          context.go('/homepage/addnewusers');
+        },
+        style: ButtonStyle(
+          shape: WidgetStateProperty.all<CircleBorder>(
+            const CircleBorder(),
+          ),
+          fixedSize: WidgetStateProperty.all(const Size(50, 50)), // Set the exact size for a circular button
+          backgroundColor: WidgetStateProperty.all<Color>(const Color(0xFF6B4EFF)),
+        ),
+        child: const Icon(Icons.add, size: 14, color: Color(0xFFC9F0FF)),
+      ),
     );
   }
 
@@ -387,7 +408,9 @@ class _HomePageState extends State<HomePage> {
                   'Account logged out successfully',
                   onTap: () {}
               );
-              context.go('/login');
+              if (mounted) {
+                context.go('/login');
+              }
             },
             style: ButtonStyle(
               shape: WidgetStateProperty.all<RoundedRectangleBorder>(
@@ -403,3 +426,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
