@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jarvis_app/Components/home_chat.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
-import 'package:jarvis_app/Components/Utilities/encrypter.dart';
 import 'package:lottie/lottie.dart';
 
-import '../Components/Utilities/user_chat_list_change_notifier.dart';
+import '../Components/ChangeNotifiers/user_chat_list_change_notifier.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,7 +19,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
-  final SecureStorageHelper _secureStorageHelper = SecureStorageHelper();
   final FocusNode _searchFocusNode = FocusNode();
   final SpeechToText _speechToText = SpeechToText();
   bool _speechEnabled = false;
@@ -112,7 +109,7 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             children: [
               Lottie.asset('assets/lottie_animations/nothing_found_animation.json', width: 80),
-              const Text('Search result not found', style: TextStyle(color: Color(0xFFCDCFD0), fontFamily: 'Inter', fontSize: 8),)
+              Text('Search result not found', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: 'Inter', fontSize: 8),)
             ],
           ),
         )
@@ -134,7 +131,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Scaffold(
-        backgroundColor: const Color(0xFF202325),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: Stack(
           children: [
             Column(
@@ -144,7 +141,6 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             addChatButton(),
-            // signOutButton()
           ],
         )
     );
@@ -170,22 +166,51 @@ class _HomePageState extends State<HomePage> {
                 SvgPicture.asset(
                   'assets/icons/logo_name.svg',
                   height: 25,
+                  colorFilter: ColorFilter.mode(
+                    Theme.of(context).colorScheme.scrim,
+                    BlendMode.srcIn,
+                  ),
                 ),
                 Row(
                   children: [
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        shape: const CircleBorder(
-                          side: BorderSide(
-                              color: Color(0xFF6B4EFF),
-                              width: 2
+                    GestureDetector(
+                      onTap: (){
+                        context.go('/homepage/myprofile');
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.secondary,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.tertiary,
+                            width: 2.0, // border width
                           ),
                         ),
-                        backgroundColor: const Color(0xFF303437),
-                        padding: const EdgeInsets.all(5), // Background color
+                        child: const Icon(Icons.person, color: Color(0xFFC9F0FF), size: 20,),
                       ),
-                      child: const Icon(Icons.person_outline, color: Color(0xFFC9F0FF), size: 20,),
+                    ),
+                    const SizedBox(
+                      width: 15,
+                    ),
+                    GestureDetector(
+                      onTap: (){
+                        context.go('/homepage/usersettings');
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.secondary,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.tertiary,
+                            width: 2.0, // border width
+                          ),
+                        ),
+                        child: const Icon(Icons.settings, color: Color(0xFFC9F0FF), size: 20,),
+                      ),
                     ),
                   ],
                 )
@@ -225,13 +250,13 @@ class _HomePageState extends State<HomePage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('JARVIS AI', style: TextStyle(color: Color(0xFFE7E7FF), fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
+                      Text('JARVIS AI', style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
                       SizedBox(
                         width: MediaQuery.of(context).size.width - 200,
-                        child: const Text("Ask AI anything",
+                        child: Text("Ask AI anything",
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
-                          style: TextStyle(color: Color(0xFFCDCFD0), fontSize: 10, fontWeight: FontWeight.w400, fontFamily: 'Inter'),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w400, fontFamily: 'Inter'),
                         ),
                       )
                     ],
@@ -253,13 +278,13 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.only(left: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: const Color(0xFF6C7072),
+        color: Theme.of(context).colorScheme.primary,
       ),
       height: 45,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Icon(Icons.search, color: Color(0xFFCDCFD0),),
+          Icon(Icons.search, color: Theme.of(context).colorScheme.onPrimary,),
           const SizedBox(width: 10,),
           Expanded(
             child: TextField(
@@ -272,11 +297,11 @@ class _HomePageState extends State<HomePage> {
               },
               focusNode: _searchFocusNode,
               controller: _searchController,
-              style: const TextStyle(color: Color(0xFFE7E7FF), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),
-              cursorColor: const Color(0xFF979C9E),
-              decoration: const InputDecoration(hintText: 'Search...',
+              style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),
+              cursorColor: Theme.of(context).colorScheme.onSecondaryContainer,
+              decoration: InputDecoration(hintText: 'Search...',
                 border: InputBorder.none,
-                hintStyle: TextStyle(color: Color(0xFF979C9E), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),
               ),
             ),
           ),
@@ -287,7 +312,7 @@ class _HomePageState extends State<HomePage> {
                 }
                 startListening();
               },
-              icon: const Icon(Icons.mic_rounded, color: Color(0xFFCDCFD0), size: 22,)
+              icon: Icon(Icons.mic_rounded, color: Theme.of(context).colorScheme.onPrimary, size: 22,)
           )
         ],
       ),
@@ -329,7 +354,7 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           const SizedBox(height: 10,),
-          const Text('Add a friend or group to start chatting', style: TextStyle(color: Color(0xFFCDCFD0), fontFamily: 'Inter', fontSize: 8),)
+          Text('Add a friend or group to start chatting', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: 'Inter', fontSize: 8),)
         ],
       ),
     );
@@ -361,14 +386,14 @@ class _HomePageState extends State<HomePage> {
 
   Widget userChatEncryptionMessage() {
     return (_searchController.text == '')
-        ? const Padding(
-      padding: EdgeInsets.only(bottom: 50, top: 30),
+        ? Padding(
+      padding: const EdgeInsets.only(bottom: 50, top: 30),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.lock_outline, color: Color(0xFFCDCFD0), size: 15,),
-          SizedBox(width: 10,),
-          Text('Your personal chats are encrypted', style: TextStyle(color: Color(0xFFCDCFD0), fontFamily: 'Inter', fontSize: 10),)
+          Icon(Icons.lock_outline, color: Theme.of(context).colorScheme.onPrimary, size: 15,),
+          const SizedBox(width: 10,),
+          Text('Your personal chats are encrypted', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: 'Inter', fontSize: 10),)
         ],
       ),
     )
@@ -388,41 +413,10 @@ class _HomePageState extends State<HomePage> {
             const CircleBorder(),
           ),
           fixedSize: WidgetStateProperty.all(const Size(50, 50)), // Set the exact size for a circular button
-          backgroundColor: WidgetStateProperty.all<Color>(const Color(0xFF6B4EFF)),
+          backgroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiary),
         ),
         child: const Icon(Icons.add, size: 14, color: Color(0xFFC9F0FF)),
       ),
-    );
-  }
-
-  Widget signOutButton() {
-    return Positioned(
-        bottom: 50,
-        left: 20,
-        child: ElevatedButton(
-            onPressed: () async {
-              const storage = FlutterSecureStorage();
-              await storage.delete(key: 'user_data');
-              InAppNotifications.show(
-                  description:
-                  'Account logged out successfully',
-                  onTap: () {}
-              );
-              if (mounted) {
-                context.go('/login');
-              }
-            },
-            style: ButtonStyle(
-              shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10), // Adjust the radius as per your requirement
-                ),
-              ),
-              fixedSize: WidgetStateProperty.all(const Size(10, 60)), // Set the exact size
-              backgroundColor: WidgetStateProperty.all<Color>(Colors.red),
-            ),
-            child: const Icon(Icons.logout, size: 15, color: Color(0xFFC9F0FF),)
-        )
     );
   }
 }

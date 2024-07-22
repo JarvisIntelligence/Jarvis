@@ -2,25 +2,33 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jarvis_app/Components/SettingsComponents/ChatSettings/chat_settings.dart';
 import 'package:jarvis_app/Components/chat.dart';
-import 'package:jarvis_app/Components/Utilities/user_chat_list_change_notifier.dart';
+import 'package:jarvis_app/Components/ChangeNotifiers/user_chat_list_change_notifier.dart';
 import 'package:jarvis_app/Pages/add_new_users_page.dart';
 import 'package:jarvis_app/Pages/login_page.dart';
+import 'package:jarvis_app/Pages/my_profile_page.dart';
 import 'package:jarvis_app/Pages/signup_page.dart';
 import 'package:jarvis_app/Pages/home_page.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
+import 'package:jarvis_app/Pages/user_settings_page.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'Components/ChangeNotifiers/theme_provider_notifier.dart';
+import 'Themes/dark_theme.dart';
+import 'Themes/light_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final bool isLoggedIn = await checkLoginStatus();
   await _precacheAssets();
   runApp(
-      // MyApp(isLoggedIn: isLoggedIn)
-    ChangeNotifierProvider(
-      create: (context) => UserChatListChangeNotifier(),
-      child: MyApp(isLoggedIn: isLoggedIn)
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => UserChatListChangeNotifier()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()), // Replace with your other ChangeNotifier
+      ],
+      child: MyApp(isLoggedIn: isLoggedIn),
     ),
   );
 }
@@ -132,6 +140,26 @@ class _MyAppState extends State<MyApp> {
               builder: (BuildContext context, GoRouterState state) {
                 return const AddNewUsersPage();
               },
+            ),
+            GoRoute(
+              path: 'myprofile',
+              builder: (BuildContext context, GoRouterState state) {
+                return const MyProfilePage();
+              },
+            ),
+            GoRoute(
+              path: 'usersettings',
+              builder: (BuildContext context, GoRouterState state) {
+                return const UserSettingsPage();
+              },
+              routes:  <RouteBase>[
+                GoRoute(
+                  path: 'chatsettings',
+                  builder: (BuildContext context, GoRouterState state) {
+                  return const ChatSettings();
+                  },
+                )
+              ]
             )
           ],
         ),
@@ -145,6 +173,9 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       routerConfig: _router,
       builder: InAppNotifications.init(),
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: Provider.of<ThemeProvider>(context).themeMode,
     );
   }
 }

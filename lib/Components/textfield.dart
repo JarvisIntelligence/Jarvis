@@ -65,26 +65,26 @@ class _CustomTextFieldState extends State<CustomTextField> {
               autocorrect: false,
               obscureText: isObscured,
               controller: widget.controller,
-              cursorColor: const Color(0xFF979C9E),
+              cursorColor: Theme.of(context).colorScheme.onSecondaryContainer,
               focusNode: _focusNode,
-              style: const TextStyle(
-                color: Color(0xFF979C9E),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
                 fontSize: 12,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.normal,
               ),
               decoration: InputDecoration(
                 hintText: widget.hintText,
-                hintStyle: const TextStyle(
-                  color: Color(0xFF979C9E),
+                hintStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
                   fontSize: 10,
                   fontFamily: 'Inter',
                   fontStyle: FontStyle.italic,
                   fontWeight: FontWeight.w400,
                 ),
                 labelText: widget.labelText,
-                labelStyle: const TextStyle(
-                  color: Color(0xFF979C9E),
+                labelStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
                   fontSize: 12,
                   fontFamily: 'Inter',
                   fontWeight: FontWeight.w400,
@@ -100,15 +100,15 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.32),
-                  borderSide: const BorderSide(
-                    color: Colors.white, // Border color when enabled
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.scrim, // Border color when enabled
                     width: 1, // Border thickness when enabled
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.32),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF6b4eff), // Border color when focused
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.tertiary, // Border color when focused
                     width: 2.0, // Border thickness when focused
                   ),
                 ),
@@ -134,7 +134,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                   isObscured = !isObscured;
                 });
               },
-              icon: (isObscured) ? const Icon(Icons.visibility_off) : const Icon(Icons.visibility),
+              icon: (isObscured) ? Icon(Icons.visibility_off, color: Theme.of(context).colorScheme.scrim,) : Icon(Icons.visibility, color: Theme.of(context).colorScheme.scrim,),
             ),
           )
         )

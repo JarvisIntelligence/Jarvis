@@ -263,7 +263,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: const Color(0xFF202325),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: Padding(
           padding: const EdgeInsets.only(left: 5, top: 50),
           child: Column(
@@ -293,7 +293,8 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
               Expanded(child: recentChatList())
             ],
           ),
-        ));
+        )
+    );
   }
 
   Widget backHeader() {
@@ -303,16 +304,16 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
             onPressed: () {
               context.pop();
             },
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back,
               size: 20,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.scrim,
             )),
-        const Text(
+        Text(
           'Contacts',
           style: TextStyle(
               fontFamily: 'Inter',
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.scrim,
               fontSize: 14,
               fontWeight: FontWeight.bold),
         )
@@ -329,15 +330,15 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
         ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: const Color(0xFF6C7072),
+          color: Theme.of(context).colorScheme.primary,
         ),
         height: 45,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Icon(
+            Icon(
               Icons.search,
-              color: Color(0xFFCDCFD0),
+              color: Theme.of(context).colorScheme.onPrimary,
             ),
             const SizedBox(
               width: 10,
@@ -353,17 +354,17 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                 },
                 focusNode: _searchFocusNode,
                 controller: _searchController,
-                style: const TextStyle(
-                    color: Color(0xFFE7E7FF),
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.scrim,
                     fontSize: 12,
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w400),
-                cursorColor: const Color(0xFF979C9E),
-                decoration: const InputDecoration(
+                cursorColor: Theme.of(context).colorScheme.onSecondaryContainer,
+                decoration: InputDecoration(
                   hintText: 'Search...',
                   border: InputBorder.none,
                   hintStyle: TextStyle(
-                      color: Color(0xFF979C9E),
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
                       fontSize: 12,
                       fontFamily: 'Inter',
                       fontWeight: FontWeight.w400),
@@ -377,9 +378,9 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                   }
                   startListening();
                 },
-                icon: const Icon(
+                icon: Icon(
                   Icons.mic_rounded,
-                  color: Color(0xFFCDCFD0),
+                  color: Theme.of(context).colorScheme.onPrimary,
                   size: 22,
                 ))
           ],
@@ -400,9 +401,10 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                 Container(
                   padding: const EdgeInsets.all(5), // Background color
                   decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondary,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0xFF6B4EFF), // Set the border color
+                      color: Theme.of(context).colorScheme.tertiary, // Set the border color
                       width: 2.0, // Set the border width
                     ),
                   ),
@@ -415,12 +417,12 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                 const SizedBox(
                   width: 15,
                 ),
-                const Text(
+                Text(
                   'Add New Contact',
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.scrim,
                       fontFamily: 'Inter'),
                 )
               ],
@@ -446,9 +448,10 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                 Container(
                   padding: const EdgeInsets.all(5), // Background color
                   decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondary,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0xFF6B4EFF), // Set the border color
+                      color: Theme.of(context).colorScheme.tertiary, // Set the border color
                       width: 2.0, // Set the border width
                     ),
                   ),
@@ -461,12 +464,12 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                 const SizedBox(
                   width: 15,
                 ),
-                const Text(
+                Text(
                   'Add New Group',
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.scrim,
                       fontFamily: 'Inter'),
                 )
               ],
@@ -522,24 +525,67 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
       padding: EdgeInsets.only(left: 5, top: (_currentPageIndex == 0) ? 20 : 0, bottom: 10),
       child: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 20),
+          Padding(
+            padding: const EdgeInsets.only(left: 20),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text(
-                'Recents',
-                style: TextStyle(
-                    color: Color(0xFFE3E5E5),
-                    fontFamily: 'Inter',
-                    fontSize: 10,
-                    fontWeight: FontWeight.w400),
-              ),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                    },
+                    child: Container(
+                      width: 60,
+                      padding: const EdgeInsets.symmetric(vertical: 5.0),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.tertiary, // Background color
+                        borderRadius: BorderRadius.circular(12), // Curved edges
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Recents',
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.tertiaryContainer,
+                              fontFamily: 'Inter',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w400),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(
+                    width: 15,
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                    },
+                    child: Container(
+                      width: 40,
+                      padding: const EdgeInsets.symmetric(vertical: 5.0),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary, // Background color
+                        borderRadius: BorderRadius.circular(12), // Curved edges
+                      ),
+                      child: Center(
+                        child: Text(
+                          'All',
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSecondaryContainer,
+                              fontFamily: 'Inter',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w400),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(left: 21, top: 5),
+            padding: const EdgeInsets.only(left: 21, top: 10),
             child: Container(
-              color: const Color(0xFF6C7072),
+              color: Theme.of(context).colorScheme.primary,
               height: 1,
             ),
           ),
@@ -550,7 +596,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                     child: Column(
                       children: [
                         Lottie.asset('assets/lottie_animations/nothing_found_animation.json', width: 80),
-                        Text((_searchFocusNode.hasFocus) ? 'Search result not found' : 'You have no recent chats', style: const TextStyle(color: Color(0xFFCDCFD0), fontFamily: 'Inter', fontSize: 8),)
+                        Text((_searchFocusNode.hasFocus) ? 'Search result not found' : 'You have no recent chats', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: 'Inter', fontSize: 8),)
                       ],
                     ),
                   )
@@ -585,10 +631,10 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                     maxLines: 1,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 8,
                       fontWeight: FontWeight.w400,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.scrim,
                       fontFamily: 'Inter',
                     ),),
                 )
@@ -601,9 +647,9 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
               child: Container(
                 width: 20,
                 height: 20,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0xFF303437),
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
                 child: Center(
                   child: IconButton(
@@ -613,7 +659,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                         changeIsUserSelected(entry['userIndex']);
                       });
                     },
-                    icon: const Icon(Icons.close, size: 5, color: Colors.white,),
+                    icon: Icon(Icons.close, size: 5, color: Theme.of(context).colorScheme.scrim,),
                   ),
                 ),
               )
@@ -644,16 +690,16 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                         width: groupNameInputWidth,
                         height: 20,
                         child: TextField(
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: '',
                             labelStyle: TextStyle(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.scrim,
                                 fontFamily: 'Inter',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600
                             ),
                             contentPadding: EdgeInsets.zero,
-                            border: OutlineInputBorder(
+                            border: const OutlineInputBorder(
                               borderSide: BorderSide(color: Colors.transparent, width: 0),
                             ),
                           ),
@@ -665,8 +711,8 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                           enableSuggestions: false,
                           autocorrect: false,
                           controller: _groupNameController,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.scrim,
                             fontSize: 14,
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w600,
@@ -681,8 +727,8 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                       child: Text((newGroupName.isNotEmpty) ? newGroupName : 'GroupName',
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.scrim,
                             fontFamily: 'Inter',
                             fontSize: 14,
                             fontWeight: FontWeight.w600
@@ -699,14 +745,14 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                             });
                           },
                           style: ButtonStyle(
-                            backgroundColor: WidgetStateProperty.all<Color>(const Color(0xFF6B4EFF)),
+                            backgroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiary),
                             shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                               RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(5), // Adjust the radius as needed
                               ),
                             ),
                           ),
-                          icon: const Icon(Icons.create, color: Colors.white, size: 10,)
+                          icon: Icon(Icons.create, color: Theme.of(context).colorScheme.scrim, size: 10,)
                       ),
                     )
                   ],
@@ -721,14 +767,14 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                         });
                       },
                       style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.all<Color>(const Color(0xFF6C7072)),
+                        backgroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.primary,),
                         shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5), // Adjust the radius as needed
                           ),
                         ),
                       ),
-                      icon: const Icon(Icons.close, color: Colors.white, size: 10,)
+                      icon: Icon(Icons.close, color: Theme.of(context).colorScheme.scrim, size: 10,)
                   ),
                 )
               ],
@@ -761,7 +807,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                         ),
                       ),
                     ),
-                    icon: const Icon(Icons.check, color: Colors.white, size: 15,)
+                    icon: Icon(Icons.check, color: Theme.of(context).colorScheme.scrim, size: 15,)
                 ),
               ),
             )

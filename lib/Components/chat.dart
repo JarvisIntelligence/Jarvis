@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+// import 'dart:io';
 import 'package:clipboard/clipboard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,9 +16,9 @@ import 'package:jarvis_app/Components/cache_image.dart';
 import 'package:jarvis_app/Components/chat_bubble.dart';
 import 'package:jarvis_app/Components/Utilities/encrypter.dart';
 import 'package:jarvis_app/Components/Utilities/send_message.dart';
-import 'package:jarvis_app/Components/Utilities/user_chat_list_change_notifier.dart';
+import 'package:jarvis_app/Components/ChangeNotifiers/user_chat_list_change_notifier.dart';
 import 'package:lottie/lottie.dart';
-import 'package:path_provider/path_provider.dart';
+// import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
@@ -83,10 +83,19 @@ class _ChatState extends State<Chat> {
 
   List<Map<String, dynamic>> userChat = [];
 
+  final PlayAudio _playAudio = PlayAudio();
+
+  late StreamSubscription _playbackVoiceNoteCompleteSubscription;
+  late StreamSubscription _positionVoiceNoteSubscription;
+  Duration currentVoiceNotePosition = Duration.zero;
+  bool isVoiceNotePlaying = false;
+  bool isVoiceNotePause = false;
+
   @override
   void initState() {
     super.initState();
     init();
+    voiceNoteAudioInit();
   }
 
   @override
@@ -96,6 +105,7 @@ class _ChatState extends State<Chat> {
     scrollController.dispose();
     focusNode.dispose();
     RecordAudio().dispose();
+    _playAudio.dispose();
     super.dispose();
   }
 
@@ -126,6 +136,20 @@ class _ChatState extends State<Chat> {
     _recordAudio.onRecordingDurationChanged.listen((duration) {
       setState(() {
         currentRecordingDuration = duration;
+      });
+    });
+  }
+
+  Future<void> voiceNoteAudioInit() async {
+    _playbackVoiceNoteCompleteSubscription = _playAudio.playbackVoiceNoteCompleteStream.listen((_) {
+      setState(() {
+        isVoiceNotePlaying = false;
+        isVoiceNotePause = false;
+      });
+    });
+    _positionVoiceNoteSubscription = _playAudio.positionVoiceNoteStream.listen((position) {
+      setState(() {
+        currentVoiceNotePosition = position;
       });
     });
   }
@@ -235,9 +259,12 @@ class _ChatState extends State<Chat> {
     int index = 0;
     for (var chatDateMap in userChat) {
       chatDateMap.forEach((date, messages) {
-        for (var message in messages) {
+        for(int i = 0; i < messages.length; i++) {
           isChatSelectedMap[index++] = false;
         }
+        // for (var message in messages) {
+        //   isChatSelectedMap[index++] = false;
+        // }
       });
     }
   }
@@ -527,7 +554,7 @@ class _ChatState extends State<Chat> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: const Color(0xFF090A0A),
+      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
       resizeToAvoidBottomInset: true,
       drawer: Drawer(
         width: MediaQuery
@@ -570,7 +597,7 @@ class _ChatState extends State<Chat> {
   Widget chatHeader(){
     return Container(
       padding: const EdgeInsets.only(bottom: 10, left: 10, right: 10, top: 50),
-      color: const Color(0xFF303437),
+      color: Theme.of(context).colorScheme.secondary,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -580,13 +607,13 @@ class _ChatState extends State<Chat> {
               onPressed: () {
                 context.pop();
               },
-              icon: const Icon(
-                Icons.arrow_back, color: Colors.white, size: 20,),
+              icon: Icon(
+                Icons.arrow_back, color: Theme.of(context).colorScheme.scrim, size: 20,),
             ),
           ),
           Column(
             children: [
-              (widget.chatName == 'JARVIS AI') ?
+              (widget.id == '0') ?
               SvgPicture.asset(
                 'assets/icons/ai_logo.svg',
                 height: 40,
@@ -654,8 +681,8 @@ class _ChatState extends State<Chat> {
                       )
                   : CacheImage(numberOfUsers: widget.numberOfUsers, imageUrl: widget.userImage, isGroup: widget.isGroup,),
               const SizedBox(height: 5,), //Two people/Group
-              Text(widget.chatName, style: const TextStyle(
-                  color: Colors.white,
+              Text(widget.chatName, style: TextStyle(
+                  color: Theme.of(context).colorScheme.scrim,
                   fontSize: 12,
                   fontFamily: 'Inter',
                   fontWeight: FontWeight.w400),)
@@ -663,17 +690,21 @@ class _ChatState extends State<Chat> {
           ),
           Align(
             alignment: Alignment.centerRight,
-            child: (widget.chatName == 'JARVIS AI')
+            child: (widget.id == '0')
                 ? IconButton(
               onPressed: () {
                 _scaffoldKey.currentState?.openDrawer();
               },
               icon: SvgPicture.asset(
-                'assets/icons/hamburger_icon.svg', height: 20,),
+                'assets/icons/hamburger_icon.svg', height: 20, colorFilter: ColorFilter.mode(
+                  Theme.of(context).colorScheme.scrim,
+                  BlendMode.srcIn,
+                ),
+              ),
             )
                 : IconButton(
               onPressed: () {},
-              icon: const Icon(Icons.more_vert, size: 20, color: Colors.white,),
+              icon: Icon(Icons.more_vert, size: 20, color: Theme.of(context).colorScheme.scrim,),
             ),
           ),
         ],
@@ -686,11 +717,11 @@ class _ChatState extends State<Chat> {
     bool isFirstDate = true;
     String? previousDate;
     int index = 0;
-    Directory? appDocDirectory;
+    // Directory? appDocDirectory;
 
-    () async {
-      appDocDirectory = await getExternalStorageDirectory();
-    };
+    // () async {
+    //   appDocDirectory = await getExternalStorageDirectory();
+    // };
     // setState(() {
     //   // Clean up userChat by removing messages with non-existing files
     //   for (var chatDateMap in userChat) {
@@ -717,9 +748,9 @@ class _ChatState extends State<Chat> {
             padding: EdgeInsets.only(bottom: 10, top: (isFirstDate) ? 0 : 20),
             child: Text(
               formattedDate,
-              style: const TextStyle(
-                color: Color(0xFF979C9E),
-                fontSize: 12,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                fontSize: 8,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w400,
               ),
@@ -752,6 +783,7 @@ class _ChatState extends State<Chat> {
               isSender: message['isSender'],
               isStarred: message['isStarred'],
               showCopyMessage: showCopyMessage,
+              chatId: widget.id,
               isGroup: widget.isGroup, // Replace with actual isGroup value if needed
               chatTime: DateFormat('HH:mm').format(DateTime.parse(message['time'])), // Replace with actual chatTime if needed
               senderName: message['senderName'],
@@ -775,6 +807,12 @@ class _ChatState extends State<Chat> {
               extension: message['extension'],
               size: message['size'],
               fileLogo: message['fileLogo'],
+              isVoiceNotePlaying: isVoiceNotePlaying,
+              isVoiceNotePaused: isVoiceNotePause,
+              currentVoiceNotePosition: currentVoiceNotePosition,
+              changeIsVoiceNotePaused: (bool value) { setState(() {isVoiceNotePause = value;}); },
+              changeIsVoiceNotePlaying: (bool value) { setState(() {isVoiceNotePlaying = value;}); },
+              playAudio: _playAudio,
             ),
           );
           index++;
@@ -801,11 +839,11 @@ class _ChatState extends State<Chat> {
           children: [
             Column(
               children: [
-                Lottie.asset((widget.chatName == 'JARVIS AI')
+                Lottie.asset((widget.id == '0')
                     ? 'assets/lottie_animations/new_ai_chat_animation.json'
                     : 'assets/lottie_animations/new_user_chat_animation.json', width: 80),
-                SizedBox(height: (widget.chatName == 'JARVIS AI') ? 0 : 10,),
-                const Text('Quiet around here..start a conversation', style: TextStyle(color: Color(0xFFCDCFD0), fontFamily: 'Inter', fontSize: 8),)
+                SizedBox(height: (widget.id == '0') ? 0 : 10,),
+                Text('Quiet around here..start a conversation', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: 'Inter', fontSize: 8),)
               ],
             ),
           ],
@@ -842,9 +880,9 @@ class _ChatState extends State<Chat> {
         },
         style: ElevatedButton.styleFrom(
           shape: const CircleBorder(),
-          backgroundColor: const Color(0xFF6B4EFF),
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
         ),
-        child: const Icon(Icons.arrow_downward, color: Colors.white, size: 20,),
+        child: Icon(Icons.arrow_downward, color: Theme.of(context).colorScheme.scrim, size: 20,),
       )
     );
   }
@@ -857,7 +895,7 @@ class _ChatState extends State<Chat> {
         width: 40,
         padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
-          color: const Color(0xFF303437),
+          color: Theme.of(context).colorScheme.secondary,
           borderRadius: BorderRadius.circular(5), // Curved edges
         ),
         child: Column(
@@ -877,7 +915,7 @@ class _ChatState extends State<Chat> {
                 await _recordAudio.deleteAudioRecording(_fileAudioName);
                 resetAudioRecordingAndPlayback();
               },
-              child: const Icon(Icons.delete, size: 16, color: Color(0xFF979C9E),),
+              child: Icon(Icons.delete, size: 16, color: Theme.of(context).colorScheme.onSecondaryContainer,),
             ), // delete
             const SizedBox(height: 20,),
             GestureDetector(
@@ -896,7 +934,7 @@ class _ChatState extends State<Chat> {
                 color: (_isRecording && !canPlayOrPauseAudio)
                     ? Colors.red
                     : (isPlaying)
-                      ? const Color(0xFF979C9E)
+                      ? Theme.of(context).colorScheme.onSecondaryContainer
                       : Colors.green,
               ),
             ), // stop/play
@@ -905,7 +943,7 @@ class _ChatState extends State<Chat> {
                 onTap: () async {
                   await sendAudioMessage();
                 },
-                child: const Icon(Icons.send_rounded, size: 16, color: Color(0xFF6B4EFF),),
+                child: Icon(Icons.send_rounded, size: 16, color: Theme.of(context).colorScheme.tertiary,),
             ), // send
           ],
         ),
@@ -923,7 +961,7 @@ class _ChatState extends State<Chat> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE3E5E5),
+                  color: Theme.of(context).colorScheme.tertiaryContainer,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -963,10 +1001,10 @@ class _ChatState extends State<Chat> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 5),
               height: 70,
-              decoration: const BoxDecoration(
-                  color: Color(0xFF090A0A),
+              decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.secondaryContainer,
                   border: Border(
-                      top: BorderSide(color: Color(0xFF202325), width: 1)
+                      top: BorderSide(color: Theme.of(context).colorScheme.surface, width: 1)
                   )
               ),
               child: Row(
@@ -977,10 +1015,11 @@ class _ChatState extends State<Chat> {
                         isShowCameraOptions = !isShowCameraOptions;
                       });
                     },
-                    icon: const Icon(Icons.camera_alt, color: Color(0xFFCDCFD0),),
+                    icon: Icon(Icons.camera_alt, color: Theme.of(context).colorScheme.onPrimary,),
                   ),
-                  IconButton(
-                      onPressed: () async {
+                  const SizedBox(width: 7,),
+                  GestureDetector(
+                      onTap: () async {
                         List<Map<String, dynamic>> pickedFiles = await CustomFilePicker().pickFiles();
                         List<Map<String, dynamic>> updatedUserChat = [];
                         if (pickedFiles.isNotEmpty) {
@@ -999,10 +1038,24 @@ class _ChatState extends State<Chat> {
                           checkInternetConnection();
                         }
                       },
-                      icon: SvgPicture.asset(
-                        'assets/icons/attach_icon.svg', height: 20,)
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(9), // Adjust the radius as needed
+                        child: Container(
+                          width: 24,
+                          height: 20,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          child: Center(
+                            child: SvgPicture.asset(
+                              'assets/icons/attach_icon.svg', height: 12, colorFilter: ColorFilter.mode(
+                              Theme.of(context).colorScheme.surface,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 3,),
+                  const SizedBox(width: 18,),
                   Expanded(
                     child: Container(
                       height: 50,
@@ -1010,8 +1063,7 @@ class _ChatState extends State<Chat> {
                         borderRadius: BorderRadius.circular(50),
                         border: Border.all(
                           width: 1, // Adjust width as needed
-                          color: const Color(
-                              0x40ffffff), // Adjust color as needed
+                          color: Theme.of(context).colorScheme.primaryContainer // Adjust color as needed
                         ),
                       ),
                       child: Row(
@@ -1048,15 +1100,15 @@ class _ChatState extends State<Chat> {
                               textInputAction: TextInputAction.newline,
                               controller: messageController,
                               focusNode: focusNode,
-                              style: const TextStyle(color: Color(0xFFE7E7FF),
+                              style: TextStyle(color: Theme.of(context).colorScheme.scrim,
                                   fontSize: 12,
                                   fontFamily: 'Inter',
                                   fontWeight: FontWeight.w400),
-                              cursorColor: const Color(0xFF979C9E),
-                              decoration: const InputDecoration(
+                              cursorColor: Theme.of(context).colorScheme.onSecondaryContainer,
+                              decoration: InputDecoration(
                                 hintText: 'Message',
                                 border: InputBorder.none,
-                                hintStyle: TextStyle(color: Color(0xFF979C9E),
+                                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer,
                                     fontSize: 12,
                                     fontFamily: 'Inter',
                                     fontWeight: FontWeight.w400),
@@ -1078,17 +1130,17 @@ class _ChatState extends State<Chat> {
                     visible: (isShowingRecordingOptions) ? false : true,
                     child: IconButton(
                         onPressed: startAudioRecording,
-                        icon: const Icon(Icons.mic, color: Color(0xFFCDCFD0),)
+                        icon: Icon(Icons.mic, color: Theme.of(context).colorScheme.onPrimary,)
                     ),
                   ),
                   Visibility(
                     visible:(isShowingRecordingOptions) ? true : false,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 22),
-                      child: (isPlaying || isAudioPlaybackPaused) ? Text(formatDuration(currentPosition), style: const TextStyle(
+                      child: (isPlaying || isAudioPlaybackPaused) ? Text(formatDuration(currentPosition), style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 12,
-                          color: Colors.white
+                          color: Theme.of(context).colorScheme.scrim
                       ),)
                           : Text(formatDuration(currentRecordingDuration),
                         style: const TextStyle(
@@ -1118,31 +1170,31 @@ class _ChatState extends State<Chat> {
                             (foundation.defaultTargetPlatform == TargetPlatform.iOS
                                 ?  1.20
                                 :  1.0),
-                        backgroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).colorScheme.scrim,
                         columns: 8,
-                        noRecents: const Text('No Recents',
+                        noRecents: Text('No Recents',
                             style: TextStyle(
                                 fontSize: 10, fontFamily: 'Inter',
-                                color: Color(0xFF090A0A)),
+                                color: Theme.of(context).colorScheme.secondaryContainer,),
                             textAlign: TextAlign.center)
                     ),
                     swapCategoryAndBottomBar: true,
-                    skinToneConfig: const SkinToneConfig(
+                    skinToneConfig: SkinToneConfig(
                       enabled: true,
-                      indicatorColor: Color(0xFF6B4EFF),
+                      indicatorColor: Theme.of(context).colorScheme.tertiary,
                     ),
-                    categoryViewConfig: const CategoryViewConfig(
-                        indicatorColor: Color(0xFF6B4EFF),
-                        iconColorSelected: Color(0xFF6B4EFF),
-                        backgroundColor: Colors.white
+                    categoryViewConfig: CategoryViewConfig(
+                        indicatorColor: Theme.of(context).colorScheme.tertiary,
+                        iconColorSelected: Theme.of(context).colorScheme.tertiary,
+                        backgroundColor: Theme.of(context).colorScheme.scrim
                     ),
-                    bottomActionBarConfig: const BottomActionBarConfig(
-                        backgroundColor: Colors.white,
-                        buttonIconColor: Color(0xFF6B4EFF),
+                    bottomActionBarConfig: BottomActionBarConfig(
+                        backgroundColor: Theme.of(context).colorScheme.scrim,
+                        buttonIconColor: Theme.of(context).colorScheme.tertiary,
                         buttonColor: Colors.transparent
                     ),
-                    searchViewConfig: const SearchViewConfig(
-                        backgroundColor: Colors.white
+                    searchViewConfig: SearchViewConfig(
+                        backgroundColor: Theme.of(context).colorScheme.scrim
                     ),
                   ),
                 ),
@@ -1162,7 +1214,7 @@ class _ChatState extends State<Chat> {
         height: 110,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: const Color(0xFF9783FF),
+          color: Theme.of(context).colorScheme.onTertiaryContainer,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Stack(
@@ -1173,14 +1225,14 @@ class _ChatState extends State<Chat> {
                 Row(
                   children: [
                     Text('Replying $replyName',
-                      style: const TextStyle(
-                          color: Color(0xFFABAFB1),
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.onTertiary,
                           fontFamily: 'Inter',
                           fontSize: 14,
                           fontWeight: FontWeight.w400
                       ),),
                     const SizedBox(width: 10,),
-                    const Icon(Icons.reply, color: Color(0xFFABAFB1),)
+                    Icon(Icons.reply, color: Theme.of(context).colorScheme.onTertiary,)
                   ],
                 ),
                 const SizedBox(
@@ -1200,8 +1252,8 @@ class _ChatState extends State<Chat> {
                         child: Text(replyMessage,
                           overflow: TextOverflow.ellipsis,
                           maxLines: 2,
-                          style: const TextStyle(
-                              color: Colors.white,
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.scrim,
                               fontFamily: 'Inter',
                               fontSize: 12,
                               fontWeight: FontWeight.w400
@@ -1223,7 +1275,7 @@ class _ChatState extends State<Chat> {
                       isReply = !isReply;
                     });
                   },
-                  icon: const Icon(Icons.close, color: Color(0xFF303437), size: 14,),
+                  icon: Icon(Icons.close, color: Theme.of(context).colorScheme.secondary, size: 14,),
                 )
             )
           ],
@@ -1244,15 +1296,15 @@ class _ChatState extends State<Chat> {
             child: Container(
               width: 40,
               height: 40,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFFc0b5f9),
+                color: Theme.of(context).colorScheme.tertiaryFixed,
               ),
               child: Center(
                 child: Text(
                   numberOfSelectedBubbles.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.scrim,
                     fontFamily: 'Inter',
                     fontSize: 12,
                   ),
@@ -1266,9 +1318,9 @@ class _ChatState extends State<Chat> {
               child: Container(
                 width: 20,
                 height: 20,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0xFF303437),
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
                 child: Center(
                   child: IconButton(
@@ -1279,7 +1331,7 @@ class _ChatState extends State<Chat> {
                         _deselectAllChats();
                       });
                     },
-                    icon: const Icon(Icons.close, size: 5, color: Colors.white,),
+                    icon: Icon(Icons.close, size: 5, color: Theme.of(context).colorScheme.scrim,),
                   ),
                 ),
               )
@@ -1299,7 +1351,7 @@ class _ChatState extends State<Chat> {
               width: 40,
               padding: const EdgeInsets.symmetric(vertical: 15),
               decoration: BoxDecoration(
-                color: const Color(0xFF303437),
+                color: Theme.of(context).colorScheme.secondary,
                 borderRadius: BorderRadius.circular(5), // Curved edges
               ),
               child: Column(
@@ -1323,21 +1375,21 @@ class _ChatState extends State<Chat> {
                         });
                       });
                     },
-                    child: const Icon(Icons.copy, size: 12, color: Color(0xFF979C9E),),
+                    child: Icon(Icons.copy, size: 12, color: Theme.of(context).colorScheme.onSecondaryContainer,),
                   ), // copy
                   const SizedBox(height: 20,),
                   GestureDetector(
                       onTap: (){},
-                      child: Image.asset('assets/icons/push_pin_icon.png', width: 14, color: const Color(0xFF979C9E),)
+                      child: Image.asset('assets/icons/push_pin_icon.png', width: 14, color: Theme.of(context).colorScheme.onSecondaryContainer,)
                   ), // pin
                   const SizedBox(height: 20,),
                   GestureDetector(
                     onTap: (){
 
                     },
-                    child: const Icon(Icons.star_border_outlined,
+                    child: Icon(Icons.star_border_outlined,
                       size: 14,
-                      color: Color(0xFF979C9E),
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
                     ),
                   ), // star
                 ],
@@ -1357,7 +1409,7 @@ class _ChatState extends State<Chat> {
             margin: const EdgeInsets.only(bottom: 20),
             padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
             decoration: BoxDecoration(
-              color: const Color(0xFF303437),
+              color: Theme.of(context).colorScheme.secondary,
               borderRadius: BorderRadius.circular(5), // Curved edges
             ),
             child: Column(
@@ -1370,14 +1422,14 @@ class _ChatState extends State<Chat> {
                       photoDetails['file'], photoDetails['name'],
                     ));
                   },
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.camera, size: 18, color: Color(0xFF979C9E),),
-                      SizedBox(
+                      Icon(Icons.camera, size: 18, color: Theme.of(context).colorScheme.onSecondaryContainer,),
+                      const SizedBox(
                         width: 5,
                       ),
                       Text('Photo Camera', style: TextStyle(
-                        color: Color(0xFF979C9E),
+                        color: Theme.of(context).colorScheme.onSecondaryContainer,
                         fontFamily: 'Inter',
                         fontSize: 10
                       ),)
@@ -1392,14 +1444,14 @@ class _ChatState extends State<Chat> {
                       videoDetails['file'], videoDetails['name'],
                     ));
                   },
-                  child: const Row(
+                  child: Row(
                       children: [
-                        Icon(Icons.video_camera_back, size: 18, color: Color(0xFF979C9E),),
-                        SizedBox(
+                        Icon(Icons.video_camera_back, size: 18, color: Theme.of(context).colorScheme.onSecondaryContainer,),
+                        const SizedBox(
                           width: 5,
                         ),
                         Text('Video Camera', style: TextStyle(
-                          color: Color(0xFF979C9E),
+                          color: Theme.of(context).colorScheme.onSecondaryContainer,
                           fontFamily: 'Inter',
                           fontSize: 10
                         ),)
@@ -1414,14 +1466,14 @@ class _ChatState extends State<Chat> {
                       photoVideoDetails['file'], photoVideoDetails['name'], photoVideoDetails['mediaType']
                     ));
                   },
-                  child: const Row(
+                  child: Row(
                       children: [
-                        Icon(Icons.image, size: 18, color: Color(0xFF979C9E),),
-                        SizedBox(
+                        Icon(Icons.image, size: 18, color: Theme.of(context).colorScheme.onSecondaryContainer,),
+                        const SizedBox(
                           width: 5,
                         ),
                         Text('Attach Single Media', style: TextStyle(
-                          color: Color(0xFF979C9E),
+                          color: Theme.of(context).colorScheme.onSecondaryContainer,
                           fontFamily: 'Inter',
                           fontSize: 10
                         ),)
@@ -1455,14 +1507,14 @@ class _ChatState extends State<Chat> {
                     });
                   },
 
-                  child: const Row(
+                  child: Row(
                       children: [
-                        Icon(Icons.perm_media, size: 18, color: Color(0xFF979C9E),),
-                        SizedBox(
+                        Icon(Icons.perm_media, size: 18, color: Theme.of(context).colorScheme.onSecondaryContainer,),
+                        const SizedBox(
                           width: 5,
                         ),
                         Text('Attach Multiple Media', style: TextStyle(
-                          color: Color(0xFF979C9E),
+                          color: Theme.of(context).colorScheme.onSecondaryContainer,
                           fontFamily: 'Inter',
                           fontSize: 10
                         ),)

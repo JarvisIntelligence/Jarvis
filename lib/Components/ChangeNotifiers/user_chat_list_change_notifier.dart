@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'encrypter.dart';
+import 'package:jarvis_app/Themes/dark_theme.dart';
+import 'package:jarvis_app/Themes/light_theme.dart';
+import '../Utilities/encrypter.dart';
 
 class UserChatListChangeNotifier extends ChangeNotifier {
   final SecureStorageHelper storage = SecureStorageHelper();
@@ -91,4 +93,3 @@ class UserChatListChangeNotifier extends ChangeNotifier {
   // }
 
 }
-

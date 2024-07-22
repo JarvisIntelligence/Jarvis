@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
+import 'package:lottie/lottie.dart';
 
 class CacheImage extends StatelessWidget {
   const CacheImage({super.key, required this.imageUrl,
@@ -44,7 +45,7 @@ class CacheImage extends StatelessWidget {
               ? 12
               : 15
             : 20,
-        child: const CircularProgressIndicator(),
+        child: Lottie.asset('assets/lottie_animations/loading_animation.json')
       ),
       errorWidget: (context, url, error) {
         onImageLoadFailed(error); // Call the function when image loading fails

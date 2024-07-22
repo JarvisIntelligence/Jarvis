@@ -106,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: const Color(0xFF202325),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: Stack(
           children: [
             SingleChildScrollView(
@@ -119,6 +119,10 @@ class _LoginPageState extends State<LoginPage> {
                         'assets/icons/logo.svg',
                         width: 118,
                         height: 48,
+                        colorFilter: ColorFilter.mode(
+                          Theme.of(context).colorScheme.scrim,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
                     const SizedBox(
@@ -150,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Column(
         children: [
-          const Text('Log Into Your Account', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
+          Text('Log Into Your Account', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.scrim, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
           const SizedBox(
             height: 30,
           ),
@@ -167,8 +171,8 @@ class _LoginPageState extends State<LoginPage> {
                 child: RichText(
                   text: TextSpan(
                     text: 'Forgot Password?',
-                    style: const TextStyle(
-                        color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.tertiary, fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic
                     ),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
@@ -193,10 +197,10 @@ class _LoginPageState extends State<LoginPage> {
                     borderRadius: BorderRadius.circular(8.32), // BorderRadius
                   ),
                 ),
-                backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
+                backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.tertiary),
                 fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
               ),
-              child: const Text("Log In", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+              child: Text("Log In", style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
             ),
           ),
           const SizedBox(
@@ -208,17 +212,17 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 Expanded(
                     child: Container(
-                      color: const Color(0xFFCDCFD0),
+                      color: Theme.of(context).colorScheme.onPrimary,
                       height: 1,
                     )
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: Text('or continue with', style: TextStyle(color: Color(0xFF979C9E), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Text('or continue with', style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
                 ),
                 Expanded(
                     child: Container(
-                      color: const Color(0xFFCDCFD0),
+                      color: Theme.of(context).colorScheme.onPrimary,
                       height: 1,
                     )
                 ),
@@ -238,7 +242,7 @@ class _LoginPageState extends State<LoginPage> {
                       borderRadius: BorderRadius.circular(8.32), // BorderRadius
                     ),
                   ),
-                  backgroundColor: WidgetStateProperty.all(Colors.white),
+                  backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.scrim),
                   fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
                 ),
                 child: Row(
@@ -247,9 +251,8 @@ class _LoginPageState extends State<LoginPage> {
                     SvgPicture.asset(
                       'assets/icons/google.svg',
                     ),
-
                     const SizedBox(width: 8.32,),
-                    const Text("Google", style: TextStyle(color: Color(0xFF404446), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+                    Text("Google", style: TextStyle(color: Theme.of(context).colorScheme.surface, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
                   ],
                 )
             ),
@@ -267,8 +270,8 @@ class _LoginPageState extends State<LoginPage> {
                 children: <TextSpan>[
                   TextSpan(
                     text: ' Sign up here',
-                    style: const TextStyle(
-                        color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.tertiary, fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic
                     ),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
@@ -290,7 +293,7 @@ class _LoginPageState extends State<LoginPage> {
                 children: <TextSpan>[
                   TextSpan(
                     text: 'Terms of Service',
-                    style: const TextStyle(color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
+                    style: TextStyle(color: Theme.of(context).colorScheme.tertiary, fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
                         // Handle the tap
@@ -303,7 +306,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   TextSpan(
                     text: 'Privacy Policy',
-                    style: const TextStyle(color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
+                    style: TextStyle(color: Theme.of(context).colorScheme.tertiary, fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
                         // Handle the tap
@@ -336,10 +339,10 @@ class _LoginPageState extends State<LoginPage> {
                         curve: Curves.easeInOut
                     );
                   },
-                  icon: const Icon(Icons.arrow_back, color: Colors.white,),
+                  icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.scrim,),
                 ),
               ),
-              const Text('Reset Your Password', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
+              Text('Reset Your Password', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.scrim, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
             ],
           ),
         ),
@@ -377,10 +380,10 @@ class _LoginPageState extends State<LoginPage> {
                           borderRadius: BorderRadius.circular(8.32), // BorderRadius
                         ),
                       ),
-                      backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
+                      backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.tertiary),
                       fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
                     ),
-                    child: const Text("Reset", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+                    child: Text("Reset", style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
                   ),
                 ),
               ],

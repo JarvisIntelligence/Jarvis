@@ -21,7 +21,7 @@ class _AiChatHistoryState extends State<AiChatHistory> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF202325),
+      color: Theme.of(context).colorScheme.surface,
       padding: const EdgeInsets.only(top: 70, right: 10),
       child: Stack(
         children: [
@@ -33,22 +33,22 @@ class _AiChatHistoryState extends State<AiChatHistory> {
                   padding: const EdgeInsets.only(left: 10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
-                    color: const Color(0xFF6C7072),
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                   height: 45,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.search, color: Color(0xFFCDCFD0),),
+                      Icon(Icons.search, color: Theme.of(context).colorScheme.onPrimary,),
                       const SizedBox(width: 10,),
                       Expanded(
                         child: TextField(
                           controller: searchController,
-                          style: const TextStyle(color: Color(0xFFE7E7FF), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),
-                          cursorColor: const Color(0xFF979C9E),
-                          decoration: const InputDecoration(hintText: 'Search...',
+                          style: TextStyle(color: Theme.of(context).colorScheme.secondaryFixed, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),
+                          cursorColor: Theme.of(context).colorScheme.onSecondaryContainer,
+                          decoration: InputDecoration(hintText: 'Search...',
                             border: InputBorder.none,
-                            hintStyle: TextStyle(color: Color(0xFF979C9E), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),
+                            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),
                           ),
                         ),
                       ),
@@ -75,18 +75,18 @@ class _AiChatHistoryState extends State<AiChatHistory> {
                     padding: const EdgeInsets.only(right: 10),
                     child: Container(
                       height: 2,
-                      color: const Color(0x66FFFFFF),
+                      color: Theme.of(context).colorScheme.tertiaryFixedDim,
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(left: 20, bottom: 60, top: 30),
                     child: GestureDetector(
                       onTap: (){},
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.delete_outline, color: Colors.white, size: 20,),
-                          SizedBox(width: 10,),
-                          Text('Clear conversations', style: TextStyle(color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.w500, fontSize: 12),)
+                          Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.secondaryFixed, size: 20,),
+                          const SizedBox(width: 10,),
+                          Text('Clear conversations', style: TextStyle(color: Theme.of(context).colorScheme.secondaryFixed, fontFamily: 'Inter', fontWeight: FontWeight.w500, fontSize: 12),)
                         ],
                       ),
                     ),
@@ -114,29 +114,29 @@ class _AiChatHistoryState extends State<AiChatHistory> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 45),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE3E5E5),
+                                  color: Theme.of(context).colorScheme.tertiaryContainer,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Column(
                                   children: [
                                     GestureDetector(
                                       onTap: (){},
-                                      child: const Row(
+                                      child: Row(
                                         children: [
-                                          Icon(Icons.ios_share_outlined, color: Color(0xFF6B4EFF), size: 20,),
-                                          SizedBox(width: 5,),
-                                          Text('Share Conversation', style: TextStyle(color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontWeight: FontWeight.w500, fontSize: 12),)
+                                          Icon(Icons.ios_share_outlined, color: Theme.of(context).colorScheme.tertiary, size: 20,),
+                                          const SizedBox(width: 5,),
+                                          Text('Share Conversation', style: TextStyle(color: Theme.of(context).colorScheme.tertiary, fontFamily: 'Inter', fontWeight: FontWeight.w500, fontSize: 12),)
                                         ],
                                       ),
                                     ),
                                     const SizedBox(height: 16,),
                                     GestureDetector(
                                       onTap: (){},
-                                      child: const Row(
+                                      child: Row(
                                         children: [
-                                          Icon(Icons.delete_outline, color: Color(0xFF9990FF), size: 20,),
-                                          SizedBox(width: 5,),
-                                          Text('Delete Conversation', style: TextStyle(color: Color(0xFF9990FF), fontFamily: 'Inter', fontWeight: FontWeight.w500, fontSize: 12),)
+                                          Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.secondaryFixedDim, size: 20,),
+                                          const SizedBox(width: 5,),
+                                          Text('Delete Conversation', style: TextStyle(color: Theme.of(context).colorScheme.secondaryFixedDim, fontFamily: 'Inter', fontWeight: FontWeight.w500, fontSize: 12),)
                                         ],
                                       ),
                                     ),

@@ -146,14 +146,14 @@ class _RecentListChatState extends State<RecentListChat> {
                           : CacheImage(numberOfUsers: "1", imageUrl: widget.groupImage, isGroup: false,) //Load this if the group has a profile image
                         : CacheImage(numberOfUsers: widget.numberOfUsers, imageUrl: widget.userImage, isGroup: widget.isGroup,),
                     const SizedBox(width: 20,),
-                    Text(widget.name, style: const TextStyle(color: Color(0xFFE7E7FF), fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
+                    Text(widget.name, style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
                   ],
                 ),
                 Visibility(
                   visible: widget.isAddingGroup,
                   child: (widget.isUserSelected)
                       ? const Padding(
-                          padding: EdgeInsets.only(right: 35),
+                          padding: EdgeInsets.only(right: 36),
                           child: Icon(Icons.check_circle, color: Colors.green,),
                         )
                       : Container(
@@ -162,7 +162,7 @@ class _RecentListChatState extends State<RecentListChat> {
                       margin: const EdgeInsets.only(right: 33), // Set the desired margin
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF6B4EFF), width: 2.0), // Red circular border
+                        border: Border.all(color: Theme.of(context).colorScheme.tertiary, width: 2.0),
                       ),
                       child: IconButton(
                         onPressed: () {
@@ -170,7 +170,7 @@ class _RecentListChatState extends State<RecentListChat> {
                           widget.addingUsersToNewGroup(widget.name, widget.userImage, widget.userIndex);
                         },
                         icon: const Icon(Icons.add),
-                        color: Colors.white, // Icon color
+                        color: Theme.of(context).colorScheme.scrim, // Icon color
                         iconSize: 11.0, // Adjust the icon size as needed
                       ),
                     )
@@ -181,7 +181,7 @@ class _RecentListChatState extends State<RecentListChat> {
           Padding(
             padding: const EdgeInsets.only(left: 21, top: 15),
             child: Container(
-              color: const Color(0xFF6C7072),
+              color: Theme.of(context).colorScheme.primary,
               height: 1,
             ),
           ),

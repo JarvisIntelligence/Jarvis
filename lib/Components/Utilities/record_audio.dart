@@ -414,9 +414,9 @@ class PlayAudio {
     });
   }
 
-  Stream<void> get playbackCompleteStream => _playbackCompleteController.stream;
+  Stream<void> get playbackVoiceNoteCompleteStream => _playbackCompleteController.stream;
 
-  Stream<Duration> get positionStream => player.positionStream;
+  Stream<Duration> get positionVoiceNoteStream => player.positionStream;
 
   Future<void> playVoiceNote(String fileName) async {
     Directory? appDocDirectory = await getExternalStorageDirectory();
@@ -431,6 +431,10 @@ class PlayAudio {
 
   Future<void> resumeVoiceNote() async {
     await player.play();
+  }
+
+  Future<void> stopVoiceNote() async {
+    await player.stop();
   }
 
   Future<void> seekToPosition(Duration position) async {

@@ -13,7 +13,7 @@ import 'Utilities/record_audio.dart';
 
 class ChatBubble extends StatefulWidget {
   const ChatBubble({super.key, this.message,
-    required this.isSender,
+    required this.isSender, required this.chatId,
     required this.isGroup, required this.chatTime,
     required this.senderName, required this.isDelivered,
     required this.isSent, required this.hasDifferentSender,
@@ -27,6 +27,10 @@ class ChatBubble extends StatefulWidget {
 
     required this.fileName, this.duration, required this.file,
     required this.extension, required this.size, required this.fileLogo,
+
+    required this.isVoiceNotePlaying, required this.isVoiceNotePaused, required this.currentVoiceNotePosition,
+    required this.changeIsVoiceNotePaused, required this.changeIsVoiceNotePlaying, required this.playAudio
+
   });
 
   // this is for text message
@@ -37,6 +41,7 @@ class ChatBubble extends StatefulWidget {
   final bool isDelivered;
   final bool isSent;
   final bool isSeen;
+  final String chatId;
   final String chatTime;
   final String chatDate;
   final String messageType;
@@ -61,21 +66,29 @@ class ChatBubble extends StatefulWidget {
   final String size;
   final String fileLogo;
 
+  final bool isVoiceNotePlaying;
+  final bool isVoiceNotePaused;
+  final Duration currentVoiceNotePosition;
+  final Function(bool value) changeIsVoiceNotePlaying;
+  final Function(bool value) changeIsVoiceNotePaused;
+  final PlayAudio playAudio;
+
   @override
   State<ChatBubble> createState() => _ChatBubbleState();
 }
 
 class _ChatBubbleState extends State<ChatBubble> {
   late bool isStarred;
-  final PlayAudio _playAudio = PlayAudio();
+  // final PlayAudio _playAudio = PlayAudio();
+  //
+  // late StreamSubscription _playbackCompleteSubscription;
+  // late StreamSubscription _positionSubscription;
 
-  late StreamSubscription _playbackCompleteSubscription;
-  late StreamSubscription _positionSubscription;
-
-  Duration currentPosition = Duration.zero;
-
-  bool isPlaying = false;
-  bool isPause = false;
+  // Duration currentPosition = Duration.zero;
+  //
+  // bool isPlaying = false;
+  // bool isPause = false;
+  bool isCurrentlyPlaying = false;
 
   void handleReplyButtonPressed() {
     widget.showReplyMessage(widget.message ?? widget.fileName, widget.senderName);
@@ -85,35 +98,36 @@ class _ChatBubbleState extends State<ChatBubble> {
   void initState() {
     super.initState();
     isStarred = widget.isStarred;
-    if(widget.messageType == 'audio'){
-      audioInit();
-    }
+    // if(widget.messageType == 'audio'){
+    //   audioInit();
+    // }
   }
 
   @override
   void dispose() {
-    if(widget.messageType == 'audio'){
-      _playAudio.dispose();
-      _playbackCompleteSubscription.cancel();
-      _positionSubscription.cancel();
-    }
+    // if(widget.messageType == 'audio'){
+    //   _playAudio.dispose();
+    //   _playbackCompleteSubscription.cancel();
+    //   _positionSubscription.cancel();
+    // }
     super.dispose();
   }
 
-  Future<void> audioInit() async {
-    _playbackCompleteSubscription = _playAudio.playbackCompleteStream.listen((_) {
-      setState(() {
-        isPlaying = false;
-        isPause = false;
-      });
-    });
-    _positionSubscription = _playAudio.positionStream.listen((position) {
-      print('current position: $position');
-      setState(() {
-        currentPosition = position;
-      });
-    });
-  }
+  // Future<void> audioInit() async {
+  //   _playbackCompleteSubscription = _playAudio.playbackCompleteStream.listen((_) {
+  //     setState(() {
+  //       isPlaying = false;
+  //       isPause = false;
+  //     });
+  //     widget.changeIsAudioPlayingAlready();
+  //   });
+  //   _positionSubscription = _playAudio.positionStream.listen((position) {
+  //     print('current position: $position');
+  //     setState(() {
+  //       currentPosition = position;
+  //     });
+  //   });
+  // }
 
   double formatDuration(Duration? duration) {
     int? totalSeconds = duration?.inSeconds;
@@ -133,11 +147,52 @@ class _ChatBubbleState extends State<ChatBubble> {
     return Duration(minutes: minutes, seconds: remainingSeconds, milliseconds: remainingMilliseconds);
   }
 
+  void playOrPauseVoiceNote() {
+    if(!widget.isVoiceNotePlaying){
+      setState(() {
+        isCurrentlyPlaying = !isCurrentlyPlaying;
+      });
+      widget.playAudio.playVoiceNote(widget.fileName ?? '');
+      widget.changeIsVoiceNotePlaying(true);
+    } else {
+      if(!widget.isVoiceNotePaused){
+        widget.playAudio.pauseVoiceNote();
+        // _playAudio.pauseVoiceNote(widget.fileName);
+        widget.changeIsVoiceNotePaused(true);
+      } else {
+        widget.playAudio.resumeVoiceNote();
+        // _playAudio.resumeVoiceNote(widget.fileName);
+        widget.changeIsVoiceNotePaused(false);
+      }
+    }
+    // if(!isPlaying){
+    //   _playAudio.playVoiceNote(widget.fileName ?? '');
+    //   setState(() {
+    //     isPlaying =  true;
+    //   });
+    //   widget.changeIsAudioPlayingAlready();
+    // } else {
+    //   if(!isPause){
+    //     _playAudio.pauseVoiceNote();
+    //     // _playAudio.pauseVoiceNote(widget.fileName);
+    //     setState(() {
+    //       isPause = true;
+    //     });
+    //   } else {
+    //     _playAudio.resumeVoiceNote();
+    //     // _playAudio.resumeVoiceNote(widget.fileName);
+    //     setState(() {
+    //       isPause = false;
+    //     });
+    //   }
+    // }
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Widget>chatOrder = [
       (widget.messageType == 'text') ? chatBubble() : (widget.messageType == 'audio') ? audioBubble() : (widget.messageType == 'image') ? photoBubble() : (widget.messageType == 'file') ? fileBubble() : videoBubble(),
-      Text(widget.chatTime, style: const TextStyle(color: Color(0xFF979C9E), fontSize: 12),),
+      Text(widget.chatTime, style: const TextStyle(color: Color(0xFF979C9E), fontSize: 8, fontFamily: 'Inter',),),
     ];
     List<Widget> reversedChatOrder = chatOrder.reversed.toList();
 
@@ -202,17 +257,21 @@ class _ChatBubbleState extends State<ChatBubble> {
               : const Color(0xFF303437),
           textStyle: const TextStyle(
               color: Colors.white,
-              fontSize: 14,
+              fontSize: 12,
               fontFamily: 'Inter',
               fontWeight: FontWeight.w400
           ),
           userName: (widget.isGroup && !widget.isSender) ? widget.senderName : null,
           userNameTextStyle: const TextStyle(
               color: Color(0xFF979C9E),
-              fontSize: 14,
+              fontSize: 12,
               fontFamily: 'Inter',
               fontWeight: FontWeight.w400
           ),
+          seen: widget.isSeen,
+          sent: widget.isSent,
+          delivered: true,
+          chatId: widget.chatId
         ),
         Visibility(
           visible: isStarred,
@@ -231,40 +290,22 @@ class _ChatBubbleState extends State<ChatBubble> {
       children: [
         BubbleNormalAudio(
           onSeekChanged: (e){
-            _playAudio.seekToPosition(parseDuration(e));
+            widget.playAudio.seekToPosition(parseDuration(e));
             // _playAudio.seekToPosition(widget.fileName, parseDuration(e));
           },
           onPlayPauseButtonClick: () {
-            if(!isPlaying){
-              _playAudio.playVoiceNote(widget.fileName ?? '');
-              setState(() {
-                isPlaying =  true;
-              });
-            } else {
-              if(!isPause){
-                _playAudio.pauseVoiceNote();
-                // _playAudio.pauseVoiceNote(widget.fileName);
-                setState(() {
-                  isPause = true;
-                });
-              } else {
-                _playAudio.resumeVoiceNote();
-                // _playAudio.resumeVoiceNote(widget.fileName);
-                setState(() {
-                  isPause = false;
-                });
-              }
-            }
+            playOrPauseVoiceNote();
           },
           tail: widget.hasDifferentSender || widget.isNewDay ? true : false,
-          isPlaying: isPlaying,
+          isPlaying: (isCurrentlyPlaying) ? widget.isVoiceNotePlaying : false,
           isSender: widget.isSender,
-          isPause: isPause,
+          isPause: (isCurrentlyPlaying) ? widget.isVoiceNotePaused : false,
           duration: formatDuration(widget.duration),
-          position: (isPlaying) ? formatDuration(currentPosition) : formatDuration(Duration.zero),
+          position: (widget.isVoiceNotePlaying && isCurrentlyPlaying) ? formatDuration(widget.currentVoiceNotePosition) : formatDuration(Duration.zero),
           bubbleRadius: 6,
           seen: widget.isSeen,
           sent: widget.isSent,
+          chatId: widget.chatId,
           senderName: (widget.isGroup && !widget.isSender) ? widget.senderName : null,
           delivered: widget.isDelivered,
           textStyle: const TextStyle(
@@ -315,6 +356,7 @@ class _ChatBubbleState extends State<ChatBubble> {
           seen: widget.isSeen,
           sent: widget.isSent,
           delivered: true,
+          chatId: widget.chatId
         ),
         Visibility(
           visible: isStarred,
@@ -342,6 +384,7 @@ class _ChatBubbleState extends State<ChatBubble> {
           seen: widget.isSeen,
           sent: widget.isSent,
           delivered: true,
+          chatId: widget.chatId,
           size: widget.size,
           tail: widget.hasDifferentSender || widget.isNewDay ? true : false,
           bubbleRadius: 6,
@@ -374,6 +417,7 @@ class _ChatBubbleState extends State<ChatBubble> {
           seen: widget.isSeen,
           sent: widget.isSent,
           delivered: true,
+          chatId: widget.chatId,
           video: widget.file,
           bubbleRadius: 6,
           tail: widget.hasDifferentSender || widget.isNewDay ? true : false,

@@ -28,9 +28,9 @@ class PreviousAiChat extends StatelessWidget {
                         ?
                     SvgPicture.asset('assets/icons/ai_icon.svg', height: 30,)
                         :
-                    const Padding(
-                      padding: EdgeInsets.only(left: 5),
-                      child: Icon(Icons.messenger_outline, color: Colors.white, size: 20,),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 5),
+                      child: Icon(Icons.messenger_outline, color: Theme.of(context).colorScheme.scrim, size: 20,),
                     ),
                     const SizedBox(width: 20,),
                     SizedBox(
@@ -38,7 +38,7 @@ class PreviousAiChat extends StatelessWidget {
                       child: Text(
                         chatName,
                         style: TextStyle(
-                          color: const Color(0xFFE7E7FF),
+                          color: Theme.of(context).colorScheme.scrim,
                           fontSize: 12,
                           fontFamily: 'Inter',
                           fontWeight: isNewChat ? FontWeight.bold : FontWeight.w400,
@@ -57,12 +57,12 @@ class PreviousAiChat extends StatelessWidget {
                           onPressed: (){
                             switchShowShareDeleteAiChat();
                           },
-                          icon: const Icon(Icons.more_vert, size: 20, color: Color(0xFFFFFFFF),)
+                          icon: Icon(Icons.more_vert, size: 20, color: Theme.of(context).colorScheme.scrim,)
                       ),
                     ),
                     IconButton(
                         onPressed: (){},
-                        icon: const Icon(Icons.arrow_forward, size: 20, color: Color(0xFFFFFFFF),)
+                        icon: Icon(Icons.arrow_forward, size: 20, color: Theme.of(context).colorScheme.scrim,)
                     )
                   ],
                 )
@@ -73,7 +73,7 @@ class PreviousAiChat extends StatelessWidget {
               padding: const EdgeInsets.only(right: 10, left: 5),
               child: Container(
                 height: 2,
-                color: (isNewChat) ? const Color(0xFF5538EE) : const Color(0x66FFFFFF),
+                color: (isNewChat) ? Theme.of(context).colorScheme.primaryFixed : Theme.of(context).colorScheme.tertiaryFixedDim,
               )
           )
         ],

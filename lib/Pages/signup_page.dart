@@ -247,10 +247,10 @@ class _SignupPageState extends State<SignupPage> {
   final Map<String, dynamic> userRegisterJsonData = {};
   final Map<String, dynamic> userRegisteredData = {};
 
-  @override
-  void initState() {
-    super.initState();
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  // }
 
   @override
   void dispose() {
@@ -374,7 +374,7 @@ class _SignupPageState extends State<SignupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: const Color(0xFF202325),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: PopScope(
           canPop: false,
           onPopInvoked: (didPop){
@@ -399,6 +399,10 @@ class _SignupPageState extends State<SignupPage> {
                           'assets/icons/logo.svg',
                           width: 118,
                           height: 48,
+                          colorFilter: ColorFilter.mode(
+                            Theme.of(context).colorScheme.scrim,
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                       const SizedBox(
@@ -451,9 +455,9 @@ class _SignupPageState extends State<SignupPage> {
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Column(
         children: [
-          const Text('Create an Account', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
+          Text('Create an Account', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.scrim, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
           const SizedBox(height: 5,),
-          const Text('Enter your email to signup for this app', style: TextStyle(fontSize: 14, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
+          Text('Enter your email to signup for this app', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.scrim, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
           const SizedBox(
             height: 30,
           ),
@@ -471,10 +475,10 @@ class _SignupPageState extends State<SignupPage> {
                     borderRadius: BorderRadius.circular(8.32), // BorderRadius
                   ),
                 ),
-                backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
+                backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.tertiary),
                 fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
               ),
-              child: const Text("Sign up with email", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+              child: Text("Sign up with email", style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
             ),
           ),
           const SizedBox(
@@ -486,17 +490,17 @@ class _SignupPageState extends State<SignupPage> {
               children: [
                 Expanded(
                     child: Container(
-                      color: const Color(0xFFCDCFD0),
+                      color: Theme.of(context).colorScheme.onPrimary,
                       height: 1,
                     )
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: Text('or continue with', style: TextStyle(color: Color(0xFF979C9E), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Text('or continue with', style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w400),),
                 ),
                 Expanded(
                     child: Container(
-                      color: const Color(0xFFCDCFD0),
+                      color: Theme.of(context).colorScheme.onPrimary,
                       height: 1,
                     )
                 ),
@@ -516,7 +520,7 @@ class _SignupPageState extends State<SignupPage> {
                       borderRadius: BorderRadius.circular(8.32), // BorderRadius
                     ),
                   ),
-                  backgroundColor: WidgetStateProperty.all(Colors.white),
+                  backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.scrim),
                   fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
                 ),
                 child: Row(
@@ -527,7 +531,7 @@ class _SignupPageState extends State<SignupPage> {
                     ),
 
                     const SizedBox(width: 8.32,),
-                    const Text("Google", style: TextStyle(color: Color(0xFF404446), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+                    Text("Google", style: TextStyle(color: Theme.of(context).colorScheme.surface, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
                   ],
                 )
             ),
@@ -545,8 +549,8 @@ class _SignupPageState extends State<SignupPage> {
                 children: <TextSpan>[
                   TextSpan(
                     text: ' Log in here',
-                    style: const TextStyle(
-                        color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.tertiary, fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic
                     ),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
@@ -570,7 +574,7 @@ class _SignupPageState extends State<SignupPage> {
                 children: <TextSpan>[
                   TextSpan(
                     text: 'Terms of Service',
-                    style: const TextStyle(color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
+                    style: TextStyle(color: Theme.of(context).colorScheme.tertiary, fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
                         // Handle the tap
@@ -583,7 +587,7 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                   TextSpan(
                     text: 'Privacy Policy',
-                    style: const TextStyle(color: Color(0xFF6B4EFF), fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
+                    style: TextStyle(color: Theme.of(context).colorScheme.tertiary, fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w400, fontStyle: FontStyle.italic),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
                         // Handle the tap
@@ -615,11 +619,11 @@ class _SignupPageState extends State<SignupPage> {
                         curve: Curves.easeInOut
                     );
                   },
-                  icon: const Icon(Icons.arrow_back, color: Colors.white,),
+                  icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.scrim,),
                 ),
               ),
             ),
-            const Text('Enter Personal Details', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
+            Text('Enter Personal Details', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.scrim, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
           ],
         ),
         Padding(
@@ -643,10 +647,10 @@ class _SignupPageState extends State<SignupPage> {
                         borderRadius: BorderRadius.circular(8.32), // BorderRadius
                       ),
                     ),
-                    backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
+                    backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.tertiary),
                     fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
                   ),
-                  child: const Text("Proceed", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+                  child: Text("Proceed", style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
                 ),
               ),
             ],
@@ -673,11 +677,11 @@ class _SignupPageState extends State<SignupPage> {
                         curve: Curves.easeInOut
                     );
                   },
-                  icon: const Icon(Icons.arrow_back, color: Colors.white,),
+                  icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.scrim,),
                 ),
               ),
             ),
-            const Text('Create Password', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
+            Text('Create Password', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.scrim, fontFamily: 'Inter', fontWeight: FontWeight.bold),),
           ],
         ),
         Padding(
@@ -701,10 +705,10 @@ class _SignupPageState extends State<SignupPage> {
                         borderRadius: BorderRadius.circular(8.32), // BorderRadius
                       ),
                     ),
-                    backgroundColor: WidgetStateProperty.all(const Color(0xFF6b4eff)),
+                    backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.tertiary),
                     fixedSize: WidgetStateProperty.all<Size>(const Size.fromHeight(42)),
                   ),
-                  child: const Text("Finish", style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
+                  child: Text("Finish", style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
                 ),
               ),
             ],
