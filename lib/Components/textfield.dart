@@ -8,13 +8,16 @@ class CustomTextField extends StatefulWidget {
     required this.controller,
     required this.labelText,
     required this.obscureText,
-    required this.hintText
+    required this.hintText,
+    this.focusNode,
+
   }) : super(key: key);
 
   final TextEditingController controller;
   final String labelText;
   final bool obscureText;
   final String hintText;
+  final FocusNode? focusNode;
 
   @override
   State<CustomTextField> createState() => _CustomTextFieldState();
@@ -22,25 +25,29 @@ class CustomTextField extends StatefulWidget {
 
 class _CustomTextFieldState extends State<CustomTextField> {
   late bool isObscured;
+  late FocusNode _focusNode;
 
   String indicatorText = '';
   Color indicatorColor = Colors.transparent;
   int numberOfIndicator = 0;
-  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    setState(() {
-      isObscured = widget.obscureText;
-    });
-    _focusNode.addListener(() {
-      setState(() {}); // Update the UI when the focus changes
-    });
+    isObscured = widget.obscureText;
+    _focusNode = widget.focusNode ?? FocusNode(); // Use provided focusNode or create a new one
+    if (widget.focusNode == null) {
+      _focusNode.addListener(() {
+        setState(() {}); // Update the UI when the focus changes
+      });
+    }
   }
 
   @override
   void dispose() {
+    if (widget.focusNode == null) {
+      _focusNode.dispose();
+    }
     _focusNode.dispose();
     super.dispose();
   }

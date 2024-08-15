@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:jarvis_app/Themes/dark_theme.dart';
-import 'package:jarvis_app/Themes/light_theme.dart';
 import '../Utilities/encrypter.dart';
 
 class UserChatListChangeNotifier extends ChangeNotifier {
@@ -61,35 +59,4 @@ class UserChatListChangeNotifier extends ChangeNotifier {
     await storage.saveListData('userChatList', _items);
     notifyListeners();
   }
-
-  // Future<void> addItem({
-  //   required String chatId,
-  //   required String userImage,
-  //   required String chatName,
-  //   required String lastMessage,
-  //   required String lastMessageTime,
-  //   required bool isGroup,
-  //   String? userImage2,
-  //   required String numberOfUsers,
-  //   String? userImage3,
-  //   required String groupImage,
-  // }) async {
-  //   Map<String, dynamic> newChat = {
-  //     'notification': false,
-  //     'id': chatId,
-  //     'userImage': userImage,
-  //     'name': chatName,
-  //     'lastMessage': lastMessage,
-  //     'lastMessageTime': lastMessageTime,
-  //     'isGroup': isGroup,
-  //     'userImage2': userImage2,
-  //     'numberOfUsers': numberOfUsers,
-  //     'userImage3': userImage3,
-  //     'groupImage': groupImage,
-  //   };
-  //   _items.add(newChat);
-  //   await storage.saveListData('userChatList', _items);
-  //   notifyListeners();
-  // }
-
 }

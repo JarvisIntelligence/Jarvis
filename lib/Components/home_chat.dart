@@ -83,7 +83,7 @@ class _HomeChatState extends State<HomeChat> {
                         height: 11, // Adjust as needed
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: (widget.notification) ? const Color(0xFF6B4EFF) : const Color(0xFF202325), // Change color as needed
+                          color: (widget.notification) ? Theme.of(context).colorScheme.tertiary : Theme.of(context).colorScheme.surface, // Change color as needed
                         ),
                       ),
                       const SizedBox(width: 10,),
@@ -155,27 +155,27 @@ class _HomeChatState extends State<HomeChat> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(widget.name, style: const TextStyle(color: Color(0xFFE7E7FF), fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
+                          Text(widget.name, style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
                           SizedBox(
                             width: MediaQuery.of(context).size.width - 200,
                             child: Text(widget.lastMessage,
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
-                              style: const TextStyle(color: Color(0xFFCDCFD0), fontSize: 10, fontWeight: FontWeight.w400, fontFamily: 'Inter'),
+                              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w400, fontFamily: 'Inter'),
                             ),
                           ),
                         ],
                       ),
                     ],
                   ),
-                  Text(lastMessageTimeString, style: const TextStyle(color: Color(0xFFE7E7FF), fontSize: 12, fontWeight: FontWeight.w400, fontFamily: 'Inter'),),
+                  Text(lastMessageTimeString, style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontWeight: FontWeight.w400, fontFamily: 'Inter'),),
                 ],
               ),
             ),
             Padding(
               padding: const EdgeInsets.only(left: 21, top: 10),
               child: Container(
-                color: const Color(0xFF6C7072),
+                color: Theme.of(context).colorScheme.primary,
                 height: 1,
               ),
             ),

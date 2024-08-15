@@ -31,12 +31,12 @@ android {
     ndkVersion flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '11' // Ensure this is a string
     }
 
     sourceSets {
@@ -44,23 +44,18 @@ android {
     }
 
     defaultConfig {
-        // Specify your own unique Application ID
         applicationId "com.jarvisintelligence.jarvis_app"
-
-        // Define the minimum and target SDK versions
         minSdkVersion 21
         targetSdkVersion flutter.targetSdkVersion
-
-        // Version code and name
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
 
     buildTypes {
         release {
-            // Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
+//            shrinkResources false
+//            minifyEnabled false
         }
     }
 }
@@ -70,6 +65,7 @@ flutter {
 }
 
 dependencies {
-    implementation 'androidx.core:core-splashscreen:1.0.0-beta02'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.core:core-splashscreen:1.0.1'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
+
