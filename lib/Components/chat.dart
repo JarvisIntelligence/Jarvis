@@ -436,10 +436,12 @@ class _ChatState extends State<Chat> {
 
   Map<String, dynamic> getLastMessage() {
     if (userChat.isEmpty) return {};
-    // Get the last date's key
-    String lastDateKey = userChat.first.keys.last;
+
+    // Get the last date's key by accessing the last entry in userChat
+    String lastDateKey = userChat.last.keys.last;
+
     // Get the list of messages for the last date
-    List<Map<String, dynamic>> messages = List<Map<String, dynamic>>.from(userChat.first[lastDateKey]);
+    List<Map<String, dynamic>> messages = List<Map<String, dynamic>>.from(userChat.last[lastDateKey]);
 
     if (messages.isEmpty) return {};
 
@@ -447,17 +449,18 @@ class _ChatState extends State<Chat> {
     Map<String, dynamic> lastMessage = messages.last;
     late String message;
     String senderName = lastMessage['senderName'];
-    if(widget.isGroup){
-      if(lastMessage['message'] != ''){
+
+    if (widget.isGroup) {
+      if (lastMessage['message'] != '') {
         message = '$senderName: ${lastMessage['message']}';
       } else {
-        message = (lastMessage['messageType'] == 'audio') ? '$senderName: Audio Recording' : '$senderName: Image';
+        message = (lastMessage['messageType'] == 'audio') ? '$senderName: Audio Recording' : (lastMessage['messageType'] == 'image') ? '$senderName: Image' : (lastMessage['messageType'] == 'video') ? '$senderName: Video' : '$senderName: File';
       }
     } else {
-      if(lastMessage['message'] != ''){
+      if (lastMessage['message'] != '') {
         message = lastMessage['message'];
       } else {
-        message = (lastMessage['messageType'] == 'audio') ? 'Audio Recording' : 'Image';
+        message = (lastMessage['messageType'] == 'audio') ? 'Audio Recording' : (lastMessage['messageType'] == 'image') ? 'Image' : (lastMessage['messageType'] == 'video') ? 'Video' : 'File';
       }
     }
 
@@ -484,11 +487,13 @@ class _ChatState extends State<Chat> {
 
   Future<void> checkIfChatIsInChatList() async {
     List<Map<String, dynamic>>? userChatList = await _secureStorageHelper.readListData('userChatList');
-    if(userChatList == null) {
-      saveUpdatedUserChatList(userChatList);
-    } else {
-      saveUpdatedUserChatList(userChatList);
-    }
+    saveUpdatedUserChatList(userChatList);
+    // if(userChatList == null) {
+    //   print('')
+    //   saveUpdatedUserChatList(userChatList);
+    // } else {
+    //   saveUpdatedUserChatList(userChatList);
+    // }
   }
 
   static Duration parseDuration(String duration) {
@@ -535,7 +540,12 @@ class _ChatState extends State<Chat> {
     String message = messageController.text;
     if (message.isNotEmpty) {
       setState(() {
-        List<Map<String, dynamic>> updatedUserChat = SendMessage().sendMessageBubbleChat(List.from(userChat), message);
+        List<Map<String, dynamic>> updatedUserChat;
+        if(containsURL(message)){
+          updatedUserChat = SendMessage().sendLinkMessageBubbleChat(List.from(userChat), message);
+        } else {
+          updatedUserChat = SendMessage().sendMessageBubbleChat(List.from(userChat), message);
+        }
         userChat = updatedUserChat;
         _initializeChatSelectionState();
       });
@@ -548,6 +558,18 @@ class _ChatState extends State<Chat> {
       checkInternetConnection();
       messageController.clear();
     }
+  }
+
+  bool containsURL(String string) {
+    final urlPattern = r'(https?:\/\/[^\s]+)';
+    final result = RegExp(urlPattern, caseSensitive: false).hasMatch(string);
+    return result;
+  }
+
+  List<String> extractURLs(String string) {
+    const urlPattern = r'(https?:\/\/[^\s]+)';
+    final matches = RegExp(urlPattern, caseSensitive: false).allMatches(string);
+    return matches.map((match) => match.group(0)!).toList();
   }
 
   @override
@@ -717,28 +739,6 @@ class _ChatState extends State<Chat> {
     bool isFirstDate = true;
     String? previousDate;
     int index = 0;
-    // Directory? appDocDirectory;
-
-    // () async {
-    //   appDocDirectory = await getExternalStorageDirectory();
-    // };
-    // setState(() {
-    //   // Clean up userChat by removing messages with non-existing files
-    //   for (var chatDateMap in userChat) {
-    //     chatDateMap.forEach((date, messages) {
-    //       messages.removeWhere((message) {
-    //         return message['file'] is File && !message['file'].existsSync() && (message['messageType'] != 'text' && message['messageType'] != 'audio');
-    //       });
-    //       // messages.removeWhere((message) {
-    //       //   String dirPath = '${appDocDirectory?.path}/Media/Audio Recordings/Sent';
-    //       //   return message['fileName'] != '' && !File('$dirPath/${message['fileName']}').existsSync();
-    //       // });
-    //     });
-    //   }
-    //   // Remove empty date entries after cleanup
-    //   userChat.removeWhere((chatDateMap) => chatDateMap.values.every((messages) => messages.isEmpty));
-    //   updateUserChatInStorage();
-    // });
 
     for (var chatDateMap in userChat) {
       chatDateMap.forEach((date, messages) {
@@ -1380,7 +1380,7 @@ class _ChatState extends State<Chat> {
                   const SizedBox(height: 20,),
                   GestureDetector(
                       onTap: (){},
-                      child: Image.asset('assets/icons/push_pin_icon.png', width: 14, color: Theme.of(context).colorScheme.onSecondaryContainer,)
+                      child: Image.asset('assets/icons/push_pin_icon.svg', width: 14, color: Theme.of(context).colorScheme.onSecondaryContainer,)
                   ), // pin
                   const SizedBox(height: 20,),
                   GestureDetector(

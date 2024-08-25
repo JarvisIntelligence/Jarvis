@@ -22,8 +22,10 @@ class _HomePageState extends State<HomePage> {
   final FocusNode _searchFocusNode = FocusNode();
   final SpeechToText _speechToText = SpeechToText();
   bool _speechEnabled = false;
+  bool archivedNotification = true;
   String _lastWords = '';
   List<Map<String, dynamic>> filteredList = [];
+  bool showChatSelectedOptions = false;
 
   late Future<LottieComposition> _lottieComposition;
 
@@ -78,44 +80,23 @@ class _HomePageState extends State<HomePage> {
     setState(() {});
   }
 
+  void toggleShowChatSelectedOptions() {
+    setState(() {
+      showChatSelectedOptions = !showChatSelectedOptions;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Use Provider.of to listen to changes and rebuild the UI
-    var listNotifier = Provider.of<UserChatListChangeNotifier>(context, listen: true);
+    // Listen to UserChatListChangeNotifier changes
+    var listNotifier = context.watch<UserChatListChangeNotifier>();
     var userChatList = listNotifier.userChatList;
 
     // Sort userChats by lastMessageTime in descending order
-    userChatList.sort((a, b) => a['lastMessageTime'].compareTo(b['lastMessageTime']));
-    List<Widget> filteredListWidgets;
+    userChatList.sort((a, b) => b['lastMessageTime'].compareTo(a['lastMessageTime']));
 
-    List<Widget> userChatsWidgets = userChatList.map((entry) => HomeChat(
-        notification: entry['notification'],
-        userImage: entry['userImage'],
-        userImage2: entry['userImage2'],
-        userImage3: entry['userImage3'],
-        numberOfUsers: entry['numberOfUsers'],
-        groupImage: entry['groupImage'],
-        name: entry['name'],
-        lastMessage: entry['lastMessage'],
-        lastMessageTime: DateTime.parse(entry['lastMessageTime']),
-        isGroup: entry['isGroup'],
-        id: entry['id']
-    )).toList();
-
-    if (filteredList.isEmpty) {
-      filteredListWidgets = [
-        Padding(
-          padding: const EdgeInsets.only(top: 20),
-          child: Column(
-            children: [
-              Lottie.asset('assets/lottie_animations/nothing_found_animation.json', width: 80),
-              Text('Search result not found', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: 'Inter', fontSize: 8),)
-            ],
-          ),
-        )
-      ];
-    } else {
-      filteredListWidgets = filteredList.map((entry) => HomeChat(
+    List<Widget> buildChatWidgets(List<Map<String, dynamic>> chatList) {
+      return chatList.map((entry) => HomeChat(
         notification: entry['notification'],
         userImage: entry['userImage'],
         userImage2: entry['userImage2'],
@@ -127,24 +108,56 @@ class _HomePageState extends State<HomePage> {
         lastMessageTime: DateTime.parse(entry['lastMessageTime']),
         isGroup: entry['isGroup'],
         id: entry['id'],
+        toggleShowChatSelectedOptions: toggleShowChatSelectedOptions,
       )).toList();
     }
 
-    return Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        body: Stack(
-          children: [
-            Column(
-              children: [
-                chatListHeader(),
-                chatListBody(userChatsWidgets, filteredListWidgets),
-              ],
-            ),
-            addChatButton(),
-          ],
+    List<Widget> userChatsWidgets = buildChatWidgets(userChatList);
+    List<Widget> filteredListWidgets;
+
+    if (filteredList.isEmpty) {
+      filteredListWidgets = [
+        Padding(
+          padding: const EdgeInsets.only(top: 20),
+          child: Column(
+            children: [
+              Lottie.asset(
+                  'assets/lottie_animations/nothing_found_animation.json',
+                  width: 80
+              ),
+              Text(
+                'Search result not found',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontFamily: 'Inter',
+                  fontSize: 8,
+                ),
+              ),
+            ],
+          ),
         )
+      ];
+    } else {
+      filteredListWidgets = buildChatWidgets(filteredList);
+    }
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              chatListHeader(),
+              chatListBody(userChatsWidgets, filteredListWidgets),
+            ],
+          ),
+          chatSelectedOptions(),
+          addChatButton(),
+        ],
+      ),
     );
   }
+
 
   Widget chatListHeader() {
     return Container(
@@ -363,6 +376,7 @@ class _HomePageState extends State<HomePage> {
   List<Widget> userChatListNotEmpty(List<Widget> userChatsWidgets, List<Widget> filteredListWidgets) {
     if (_searchController.text == '') {
       return [
+        archivedChat(),
         ...userChatsWidgets,
         userChatEncryptionMessage(),
       ];
@@ -417,6 +431,116 @@ class _HomePageState extends State<HomePage> {
         ),
         child: const Icon(Icons.add, size: 14, color: Color(0xFFC9F0FF)),
       ),
+    );
+  }
+
+  Widget chatSelectedOptions() {
+    return Visibility(
+        visible: showChatSelectedOptions,
+        child: Positioned(
+          bottom: 120,
+          right: 32,
+            child: Container(
+              width: 40,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondary,
+                borderRadius: BorderRadius.circular(5), // Curved edges
+              ),
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+
+                    },
+                    child: Icon(Icons.archive_outlined, size: 12, color: Theme.of(context).colorScheme.onSecondaryContainer,),
+                  ), // copy
+                  const SizedBox(height: 20,),
+                  GestureDetector(
+                      onTap: (){},
+                      child: Image.asset('assets/icons/push_pin_icon.svg', width: 14, color: Theme.of(context).colorScheme.onSecondaryContainer,)
+                  ), // pin
+                  const SizedBox(height: 20,),
+                  GestureDetector(
+                    onTap: (){
+
+                    },
+                    child: Icon(Icons.delete_outline,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    ),
+                  ), //delete
+                  const SizedBox(height: 20,),
+                  GestureDetector(
+                    onTap: (){
+
+                    },
+                    child: Icon(Icons.notifications_off_outlined,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    ),
+                  ), //notifications
+                ],
+              ),
+            )
+        )
+    );
+  }
+
+  Widget archivedChat() {
+    return Visibility(
+      visible: true,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 5),
+        child: GestureDetector(
+          onTap: () {
+            context.push('/homepage/archivedchats');
+          },
+          child: Container(
+            padding: const EdgeInsets.only(bottom: 15, top: 15, left: 15),
+            decoration: BoxDecoration(
+                color: Colors.transparent,
+                border: Border(
+                    bottom: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 1
+                    )
+                )
+            ),
+            child: Row(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 11, // Adjust as needed
+                          height: 11, // Adjust as needed
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: (archivedNotification) ? Theme.of(context).colorScheme.tertiary : Theme.of(context).colorScheme.surface, // Change color as needed
+                          ),
+                        ),
+                        const SizedBox(width: 10,),
+                        const SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: Center(
+                            child: Icon(Icons.archive_outlined, size: 30,),
+                          ),
+                        ),
+                        const SizedBox(width: 15,),
+                        Text('Archived Chats', style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      )
     );
   }
 }

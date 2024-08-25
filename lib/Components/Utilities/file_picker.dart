@@ -29,8 +29,20 @@ class CustomFilePicker {
        return 'assets/icons/file_extensions/txt_icon.png';
       case 'xls':
        return 'assets/icons/file_extensions/xls_icon.png';
+      case 'png':
+        return 'assets/icons/file_extensions/png_icon.png';
+      case 'jpg':
+        return 'assets/icons/file_extensions/jpg_icon.png';
+      case 'jpeg':
+        return 'assets/icons/file_extensions/jpg_icon.png';
+      case 'mp4':
+        return 'assets/icons/file_extensions/mp4_icon.png';
+      case 'webp':
+        return 'assets/icons/file_extensions/webp_icon.png';
+      case 'gif':
+        return 'assets/icons/file_extensions/gif_icon.png';
       default:
-       return '';
+       return 'assets/icons/file_extensions/document_icon.png';
     }
   }
 
@@ -50,7 +62,7 @@ class CustomFilePicker {
     List<Map<String, dynamic>> pickedFiles = [];
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx', 'mp3', 'ppt', 'txt', 'xls'],
+      allowedExtensions: ['pdf', 'doc', 'docx', 'mp3', 'ppt', 'txt', 'xls', 'gif', 'mp4', 'png', 'jpg'],
       allowMultiple: true,
     );
 

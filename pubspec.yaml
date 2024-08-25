@@ -66,6 +66,11 @@ dependencies:
   audioplayers: ^6.0.0
   video_player: ^2.9.1
   flutter_native_splash: ^2.4.0
+  sqflite: ^2.3.3+1
+  chewie: ^1.8.3
+  audio_waveforms: ^1.0.5
+  flutter_local_notifications: ^17.2.2
+  any_link_preview: ^3.0.2
 
 dependency_overrides:
   js: ^0.7.1

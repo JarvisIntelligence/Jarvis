@@ -48,7 +48,6 @@ class _CustomTextFieldState extends State<CustomTextField> {
     if (widget.focusNode == null) {
       _focusNode.dispose();
     }
-    _focusNode.dispose();
     super.dispose();
   }
 

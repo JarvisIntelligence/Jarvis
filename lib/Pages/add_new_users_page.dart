@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jarvis_app/Components/recent_list_chat.dart';
@@ -7,8 +6,11 @@ import 'package:lottie/lottie.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:sqflite/sqflite.dart';
+import '../Components/Utilities/SqfliteHelperClasses/contactListDatabaseHelper.dart';
 import '../Components/cache_image.dart';
+import 'package:uuid/uuid.dart';
+
 
 class AddNewUsersPage extends StatefulWidget {
   const AddNewUsersPage({super.key});
@@ -18,7 +20,9 @@ class AddNewUsersPage extends StatefulWidget {
 }
 
 class _AddNewUsersPageState extends State<AddNewUsersPage> {
-  final storage = const FlutterSecureStorage();
+  // final storage = const FlutterSecureStorage();
+  late final Database db;
+
   final FocusNode _searchFocusNode = FocusNode();
   final FocusNode _groupNameFocusNode = FocusNode();
   final FocusNode _newContactFocusNode = FocusNode();
@@ -32,6 +36,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
   String newGroupName = 'Group Name';
   bool editGroupName = false;
   double groupNameInputWidth = 90.0;
+  int maxGroupSize = 10;
 
   int _currentPageIndex = 1;
   final _controller = PageController(
@@ -47,7 +52,8 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
   //     'userImage2': '',
   //     'name': 'Stephen Reed',
   //     'groupImage': '',
-  //     'id': '1'
+  //     'id': '1',
+  //     'userBio': 'Loves outdoor adventures and a good cup of coffee.'
   //   },
   //   {
   //     'userImage3': '',
@@ -57,27 +63,30 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
   //     'userImage2': '',
   //     'name': 'Maria Garcia',
   //     'groupImage': '',
-  //     'id': '2'
+  //     'id': '2',
+  //     'userBio': 'Avid reader and aspiring author.'
   //   },
   //   {
   //     'userImage3': '',
   //     'numberOfUsers': "2",
   //     'isGroup': true,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/65.jpg',
-  //     'userImage2': 'https://randomuser.me/api/portraits/women/44.jpg',
+  //     'userImage': 'https://randomuser.me/api/portraits/men/20.jpg',
+  //     'userImage2': 'https://randomuser.me/api/portraits/women/20.jpg',
   //     'name': 'James & Maria',
   //     'groupImage': '',
-  //     'id': '3'
+  //     'id': '3',
+  //     'userBio': 'A small group of close friends who love to hang out and have fun.'
   //   },
   //   {
-  //     'userImage3': 'https://randomuser.me/api/portraits/men/56.jpg',
+  //     'userImage3': 'https://randomuser.me/api/portraits/men/16.jpg',
   //     'numberOfUsers': "3",
   //     'isGroup': true,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/68.jpg',
-  //     'userImage2': 'https://randomuser.me/api/portraits/men/36.jpg',
+  //     'userImage': 'https://randomuser.me/api/portraits/women/36.jpg',
+  //     'userImage2': 'https://randomuser.me/api/portraits/men/27.jpg',
   //     'name': 'Project Team',
   //     'groupImage': '',
-  //     'id': '4'
+  //     'id': '4',
+  //     'userBio': 'Dedicated team working on innovative projects together.'
   //   },
   //   {
   //     'userImage3': '',
@@ -87,7 +96,8 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
   //     'userImage2': '',
   //     'name': 'Robert Brown',
   //     'groupImage': '',
-  //     'id': '5'
+  //     'id': '5',
+  //     'userBio': 'Tech enthusiast with a passion for coding.'
   //   },
   //   {
   //     'userImage3': '',
@@ -97,17 +107,19 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
   //     'userImage2': '',
   //     'name': 'Linda Davis',
   //     'groupImage': '',
-  //     'id': '6'
+  //     'id': '6',
+  //     'userBio': 'Loves cooking and exploring new recipes.'
   //   },
   //   {
-  //     'userImage3': 'https://randomuser.me/api/portraits/women/45.jpg',
+  //     'userImage3': 'https://randomuser.me/api/portraits/women/22.jpg',
   //     'numberOfUsers': "3",
   //     'isGroup': true,
   //     'userImage': 'https://randomuser.me/api/portraits/men/18.jpg',
   //     'userImage2': 'https://randomuser.me/api/portraits/women/19.jpg',
   //     'name': 'Marketing Team',
   //     'groupImage': 'https://picsum.photos/150',
-  //     'id': '7'
+  //     'id': '7',
+  //     'userBio': 'Creative and energetic team driving the company’s marketing efforts.'
   //   },
   //   {
   //     'userImage3': '',
@@ -117,17 +129,19 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
   //     'userImage2': '',
   //     'name': 'Barbara Martinez',
   //     'groupImage': '',
-  //     'id': '8'
+  //     'id': '8',
+  //     'userBio': 'Fitness enthusiast who loves to stay active.'
   //   },
   //   {
   //     'userImage3': '',
   //     'numberOfUsers': "2",
   //     'isGroup': true,
   //     'userImage': 'https://randomuser.me/api/portraits/men/24.jpg',
-  //     'userImage2': 'https://randomuser.me/api/portraits/women/42.jpg',
+  //     'userImage2': 'https://randomuser.me/api/portraits/women/22.jpg',
   //     'name': 'Paul & Susan',
   //     'groupImage': 'https://picsum.photos/150',
-  //     'id': '9'
+  //     'id': '9',
+  //     'userBio': 'Dynamic couple who enjoy exploring new cultures and cuisines.'
   //   },
   //   {
   //     'userImage3': '',
@@ -137,13 +151,349 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
   //     'userImage2': '',
   //     'name': 'Susan Taylor',
   //     'groupImage': '',
-  //     'id': '10'
+  //     'id': '10',
+  //     'userBio': 'Artist with a passion for painting and design.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/35.jpg',
+  //     'userImage2': '',
+  //     'name': 'Kevin Wilson',
+  //     'groupImage': '',
+  //     'id': '11',
+  //     'userBio': 'Music lover and guitar player.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/30.jpg',
+  //     'userImage2': '',
+  //     'name': 'Sophia Moore',
+  //     'groupImage': '',
+  //     'id': '12',
+  //     'userBio': 'Graphic designer with a creative flair.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/22.jpg',
+  //     'userImage2': '',
+  //     'name': 'Michael Johnson',
+  //     'groupImage': '',
+  //     'id': '13',
+  //     'userBio': 'Entrepreneur and startup founder.'
+  //   },
+  //   {
+  //     'userImage3': 'https://randomuser.me/api/portraits/women/30.jpg',
+  //     'numberOfUsers': "4",
+  //     'isGroup': true,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/22.jpg',
+  //     'userImage2': 'https://randomuser.me/api/portraits/men/23.jpg',
+  //     'name': 'Design Team',
+  //     'groupImage': 'https://picsum.photos/150',
+  //     'id': '14',
+  //     'userBio': 'Innovative team creating stunning visual designs.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/32.jpg',
+  //     'userImage2': '',
+  //     'name': 'Olivia Taylor',
+  //     'groupImage': '',
+  //     'id': '15',
+  //     'userBio': 'Fashionista with a passion for trends.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/44.jpg',
+  //     'userImage2': '',
+  //     'name': 'William Miller',
+  //     'groupImage': '',
+  //     'id': '16',
+  //     'userBio': 'Sports fan and amateur athlete.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "2",
+  //     'isGroup': true,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/40.jpg',
+  //     'userImage2': 'https://randomuser.me/api/portraits/men/36.jpg',
+  //     'name': 'Friends Forever',
+  //     'groupImage': '',
+  //     'id': '17',
+  //     'userBio': 'Best friends since childhood, inseparable and adventurous.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/28.jpg',
+  //     'userImage2': '',
+  //     'name': 'Emily Harris',
+  //     'groupImage': '',
+  //     'id': '18',
+  //     'userBio': 'Loves hiking and being in nature.'
+  //   },
+  //   {
+  //     'userImage3': 'https://randomuser.me/api/portraits/men/33.jpg',
+  //     'numberOfUsers': "4",
+  //     'isGroup': true,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/35.jpg',
+  //     'userImage2': 'https://randomuser.me/api/portraits/men/26.jpg',
+  //     'name': 'Tech Innovators',
+  //     'groupImage': 'https://picsum.photos/150',
+  //     'id': '19',
+  //     'userBio': 'Forward-thinking group focused on tech advancements.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/19.jpg',
+  //     'userImage2': '',
+  //     'name': 'James Anderson',
+  //     'groupImage': '',
+  //     'id': '20',
+  //     'userBio': 'Travel enthusiast with a love for photography.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/29.jpg',
+  //     'userImage2': '',
+  //     'name': 'Alice Campbell',
+  //     'groupImage': '',
+  //     'id': '21',
+  //     'userBio': 'Avid gamer and technology geek.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/30.jpg',
+  //     'userImage2': '',
+  //     'name': 'Nathan Green',
+  //     'groupImage': '',
+  //     'id': '22',
+  //     'userBio': 'Fitness trainer and health advocate.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/26.jpg',
+  //     'userImage2': '',
+  //     'name': 'Rebecca Martinez',
+  //     'groupImage': '',
+  //     'id': '23',
+  //     'userBio': 'Creative writer with a passion for storytelling.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/34.jpg',
+  //     'userImage2': '',
+  //     'name': 'Daniel Wilson',
+  //     'groupImage': '',
+  //     'id': '24',
+  //     'userBio': 'Entrepreneur with a focus on startups.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "2",
+  //     'isGroup': true,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/32.jpg',
+  //     'userImage2': 'https://randomuser.me/api/portraits/men/31.jpg',
+  //     'name': 'Book Club',
+  //     'groupImage': 'https://picsum.photos/150',
+  //     'id': '25',
+  //     'userBio': 'Book lovers who meet regularly to discuss their reads.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/40.jpg',
+  //     'userImage2': '',
+  //     'name': 'Sophia Adams',
+  //     'groupImage': '',
+  //     'id': '26',
+  //     'userBio': 'Foodie with a passion for baking.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/40.jpg',
+  //     'userImage2': '',
+  //     'name': 'Jack Thompson',
+  //     'groupImage': '',
+  //     'id': '27',
+  //     'userBio': 'Outdoor sports enthusiast and photographer.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/35.jpg',
+  //     'userImage2': '',
+  //     'name': 'Ella Johnson',
+  //     'groupImage': '',
+  //     'id': '28',
+  //     'userBio': 'Fashion designer with a flair for elegance.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/38.jpg',
+  //     'userImage2': '',
+  //     'name': 'Alexander Martinez',
+  //     'groupImage': '',
+  //     'id': '29',
+  //     'userBio': 'Music producer with a love for jazz.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/21.jpg',
+  //     'userImage2': '',
+  //     'name': 'Natalie Green',
+  //     'groupImage': '',
+  //     'id': '30',
+  //     'userBio': 'Art curator and gallery manager.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/28.jpg',
+  //     'userImage2': '',
+  //     'name': 'Lucas Harris',
+  //     'groupImage': '',
+  //     'id': '31',
+  //     'userBio': 'Game developer with a passion for VR technology.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/25.jpg',
+  //     'userImage2': '',
+  //     'name': 'Charlotte Wilson',
+  //     'groupImage': '',
+  //     'id': '32',
+  //     'userBio': 'Dance instructor and choreographer.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/25.jpg',
+  //     'userImage2': '',
+  //     'name': 'Matthew Lewis',
+  //     'groupImage': '',
+  //     'id': '33',
+  //     'userBio': 'Automotive engineer with a love for classic cars.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "2",
+  //     'isGroup': true,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/20.jpg',
+  //     'userImage2': 'https://randomuser.me/api/portraits/men/33.jpg',
+  //     'name': 'Adventure Seekers',
+  //     'groupImage': 'https://picsum.photos/150',
+  //     'id': '34',
+  //     'userBio': 'Group of friends who love exploring new places.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/22.jpg',
+  //     'userImage2': '',
+  //     'name': 'Zoe Davis',
+  //     'groupImage': '',
+  //     'id': '35',
+  //     'userBio': 'Wellness coach and motivational speaker.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/26.jpg',
+  //     'userImage2': '',
+  //     'name': 'Ryan Johnson',
+  //     'groupImage': '',
+  //     'id': '36',
+  //     'userBio': 'Travel photographer with a love for landscapes.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/34.jpg',
+  //     'userImage2': '',
+  //     'name': 'Ava Scott',
+  //     'groupImage': '',
+  //     'id': '37',
+  //     'userBio': 'Literary critic with a passion for poetry.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/31.jpg',
+  //     'userImage2': '',
+  //     'name': 'David Clark',
+  //     'groupImage': '',
+  //     'id': '38',
+  //     'userBio': 'Software developer with an interest in AI.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/women/24.jpg',
+  //     'userImage2': '',
+  //     'name': 'Hannah Lewis',
+  //     'groupImage': '',
+  //     'id': '39',
+  //     'userBio': 'Passionate about sustainable living and environmentalism.'
+  //   },
+  //   {
+  //     'userImage3': '',
+  //     'numberOfUsers': "1",
+  //     'isGroup': false,
+  //     'userImage': 'https://randomuser.me/api/portraits/men/29.jpg',
+  //     'userImage2': '',
+  //     'name': 'Lucas Martin',
+  //     'groupImage': '',
+  //     'id': '40',
+  //     'userBio': 'Startup founder and tech innovator.'
   //   }
   // ];
+
   List<Map<String, dynamic>> userContactList = [];
   List<Map<String, dynamic>> filteredUserRecentsList = [];
   List<Map<String, dynamic>> previousUserRecentsList = [];
-  List<Map<String, dynamic>> newGroupUserList = [];
+  List<Map<String, dynamic>> newGroupUserList = [{
+    'name': '(You)',
+    'profileImage': 'https://randomuser.me/api/portraits/lego/6.jpg',
+    'userIndex': 0
+  }];
 
   // Map to track user add selection state of each user in a new group
   Map<int, bool> isUserSelectedMap = {};
@@ -151,6 +501,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
   @override
   void initState() {
     super.initState();
+    _initializeDatabase();
     readContactListFromStorage();
     _searchFocusNode.addListener(() {setState(() {});});
     _groupNameController.addListener(updateGroupNameInputWidth);
@@ -167,13 +518,14 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
     _groupNameController.dispose();
     super.dispose();
   }
+  Future<void> _initializeDatabase() async {
+    db = await ContactListDatabaseHelper().database;
+  }
+
 
   Future<void> readContactListFromStorage() async {
-    final String? storedContactListJson = await storage.read(key: 'contactList');
-
-    if (storedContactListJson != null) {
-      final List<dynamic> decodedList = jsonDecode(storedContactListJson);
-      final List<Map<String, dynamic>> contactList = decodedList.cast<Map<String, dynamic>>();
+    final List<Map<String, dynamic>> contactList = await ContactListDatabaseHelper().getAllContacts();
+    if (contactList.isNotEmpty){
       setState(() {
         userContactList = contactList;
       });
@@ -184,36 +536,46 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
     }
   }
 
-  Future<void> saveContactListToStorage(List<Map<String, dynamic>> userContactList) async {
-    final String jsonString = jsonEncode(userContactList);
-    await storage.write(key: 'contactList', value: jsonString);
+  Future<void> saveContactToStorage(Map<String, dynamic> userContact) async {
+    await ContactListDatabaseHelper().insertContact(userContact);
   }
 
   void _updateUserSelectionState() {
-    int index = 0;
+    int index = 1;
     setState(() {
       isUserSelectedMap = {};
     });
-    for (var userChatMaps in userContactList) {
+    for (var _ in userContactList) {
       isUserSelectedMap[index++] = false;
     }
   }
 
   void changeIsUserSelected(int index) {
-    setState(() {
-      isUserSelectedMap[index] = !isUserSelectedMap[index]!;
-    });
+    if (newGroupUserList.length >= maxGroupSize) {
+      return;
+    } else {
+      setState(() {
+        isUserSelectedMap[index] = !isUserSelectedMap[index]!;
+      });
+    }
   }
 
   void addingUsersToNewGroup(String name, String profileImage, int userIndex) {
-    Map<String, dynamic> newUser = {
-      'name': name,
-      'profileImage': profileImage,
-      'userIndex': userIndex
-    };
-    setState(() {
-      newGroupUserList.add(newUser);
-    });
+    if (newGroupUserList.length >= maxGroupSize){
+      InAppNotifications.show(
+        description: "Can't add more users to the group",
+        onTap: (){}
+      );
+    } else {
+      Map<String, dynamic> newUser = {
+        'name': name,
+        'profileImage': profileImage,
+        'userIndex': userIndex
+      };
+      setState(() {
+        newGroupUserList.add(newUser);
+      });
+    }
   }
 
   void updateGroupNameInputWidth() {
@@ -234,6 +596,9 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
 
   void addToContactList(String userName) {
     final bool userExists = userContactList.any((contact) => contact['name'] == userName);
+    const uuid = Uuid();
+    String uniqueId = uuid.v4();
+
     if (userExists) {
       InAppNotifications.show(
         description: "User already exists in your contact list",
@@ -242,22 +607,33 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
       return;
     }
     final List<Map<String, dynamic>> copyUserContactList = [...userContactList];
-    copyUserContactList.add(
-        {
-          'userImage3': '',
-          'numberOfUsers': "1",
-          'isGroup': false,
-          'userImage': 'https://randomuser.me/api/portraits/men/32.jpg',
-          'userImage2': '',
-          'name': userName,
-          'groupImage': '',
-          'id': '1'
-        },
-    );
+    Map<String, dynamic> userContact = {
+      'userImage3': '',
+      'numberOfUsers': "1",
+      'isGroup': false,
+      'userImage': 'https://randomuser.me/api/portraits/men/32.jpg',
+      'userImage2': '',
+      'name': userName,
+      'groupImage': '',
+      'id': uniqueId.toString(),
+      'userBio': 'I love Jollof rice and chicken so much that it can kill me'
+    };
+    Map<String, dynamic> userContactDatabase = {
+      'userImage3': '',
+      'numberOfUsers': "1",
+      'isGroup': 0,
+      'userImage': 'https://randomuser.me/api/portraits/men/32.jpg',
+      'userImage2': '',
+      'name': userName,
+      'groupImage': '',
+      'id': uniqueId.toString(),
+      'userBio': 'I love Jollof rice and chicken so much that it can kill me'
+    };
+    copyUserContactList.add(userContact);
     setState(() {
       userContactList = copyUserContactList;
     });
-    saveContactListToStorage(userContactList);
+    saveContactToStorage(userContactDatabase);
     resetContactSelection();
   }
 
@@ -310,7 +686,11 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
     setState(() {
       isAddingGroup = !isAddingGroup;
       userContactList = previousUserRecentsList;
-      newGroupUserList = [];
+      newGroupUserList = [{
+        'name': '(You)',
+        'profileImage': 'https://randomuser.me/api/portraits/lego/6.jpg',
+        'userIndex': 0
+      }];
       newGroupName = 'Group Name';
     });
     _controller.jumpToPage(
@@ -338,7 +718,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
               ),
               searchChatListBody(),
               SizedBox(
-                height: (_currentPageIndex == 1) ? 120 : (_currentPageIndex == 2) ? 245 : 200,
+                height: (_currentPageIndex == 1) ? 120 : (_currentPageIndex == 2) ? 215 : 200,
                 child: PageView(
                   scrollDirection: Axis.horizontal,
                   controller: _controller,
@@ -468,37 +848,40 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
               );
               _newContactFocusNode.requestFocus();
             },
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(5), // Background color
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.tertiary, // Set the border color
-                      width: 2.0, // Set the border width
+            child: Container(
+              color: Colors.transparent,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(5), // Background color
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondary,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.tertiary, // Set the border color
+                        width: 2.0, // Set the border width
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.person_add_alt_outlined,
+                      color: Color(0xFFC9F0FF),
+                      size: 20,
                     ),
                   ),
-                  child: const Icon(
-                    Icons.person_add_alt_outlined,
-                    color: Color(0xFFC9F0FF),
-                    size: 20,
+                  const SizedBox(
+                    width: 15,
                   ),
-                ),
-                const SizedBox(
-                  width: 15,
-                ),
-                Text(
-                  'Add New Contact',
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.scrim,
-                      fontFamily: 'Inter'),
-                )
-              ],
-            ),
+                  Text(
+                    'Add New Contact',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.scrim,
+                        fontFamily: 'Inter'),
+                  )
+                ],
+              ),
+            )
           ),
           const SizedBox(
             height: 15,
@@ -520,37 +903,40 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                 );
               }
             },
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(5), // Background color
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.tertiary, // Set the border color
-                      width: 2.0, // Set the border width
+            child: Container(
+              color: Colors.transparent,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(5), // Background color
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondary,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.tertiary, // Set the border color
+                        width: 2.0, // Set the border width
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.group_add_outlined,
+                      color: Color(0xFFC9F0FF),
+                      size: 20,
                     ),
                   ),
-                  child: const Icon(
-                    Icons.group_add_outlined,
-                    color: Color(0xFFC9F0FF),
-                    size: 20,
+                  const SizedBox(
+                    width: 15,
                   ),
-                ),
-                const SizedBox(
-                  width: 15,
-                ),
-                Text(
-                  'Create New Group',
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.scrim,
-                      fontFamily: 'Inter'),
-                )
-              ],
-            ),
+                  Text(
+                    'Create New Group',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.scrim,
+                        fontFamily: 'Inter'),
+                  )
+                ],
+              ),
+            )
           )
         ],
       ),
@@ -558,30 +944,11 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
   }
 
   Widget contactList() {
-    List<Widget> userContactListWidgets = userContactList.asMap().entries.map((entry) {
-      int userIndex = entry.key;
-      var entryValue =  entry.value;
-      return RecentListChat(
-        isGroup: entryValue['isGroup'],
-        userImage: entryValue['userImage'],
-        userImage2: entryValue['userImage2'],
-        userImage3: entryValue['userImage3'],
-        numberOfUsers: entryValue['numberOfUsers'],
-        name: entryValue['name'],
-        groupImage: entryValue['groupImage'],
-        isAddingGroup: isAddingGroup,
-        addingUsersToNewGroup: addingUsersToNewGroup,
-        isUserSelected: isUserSelectedMap[userIndex] ?? false,
-        changeIsUserSelected: () => changeIsUserSelected(userIndex),
-        userIndex: userIndex,
-        id: entryValue['id'],
-      );
-    }).toList();
-
-    List<Widget> filteredUserRecentsListWidgets = filteredUserRecentsList.asMap().entries.map((entry) {
-      int userIndex = entry.key;
-      var entryValue =  entry.value;
-      return RecentListChat(
+    List<Widget> buildRecentListChatWidgets(List<Map<String, dynamic>> contactList) {
+      return contactList.asMap().entries.map((entry) {
+        final int userIndex = entry.key + 1;
+        final entryValue = entry.value;
+        return RecentListChat(
           isGroup: entryValue['isGroup'],
           userImage: entryValue['userImage'],
           userImage2: entryValue['userImage2'],
@@ -595,70 +962,22 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
           changeIsUserSelected: () => changeIsUserSelected(userIndex),
           userIndex: userIndex,
           id: entryValue['id'],
-      );
-    }).toList();
+          userBio: entryValue['userBio'],
+        );
+      }).toList();
+    }
+
+    final userContactListWidgets = buildRecentListChatWidgets(userContactList);
+    final filteredUserRecentsListWidgets = buildRecentListChatWidgets(filteredUserRecentsList);
 
     return Padding(
-      padding: EdgeInsets.only(left: 5, top: (_currentPageIndex == 1) ? 20 : 0, bottom: 10),
+      padding: EdgeInsets.only(
+        left: 5,
+        top: (_currentPageIndex == 1) ? 20 : 0,
+        bottom: 10,
+      ),
       child: Column(
         children: [
-          // Padding(
-          //   padding: const EdgeInsets.only(left: 20),
-          //   child: Align(
-          //     alignment: Alignment.centerLeft,
-          //     child: Row(
-          //       children: [
-          //         GestureDetector(
-          //           onTap: () {
-          //           },
-          //           child: Container(
-          //             width: 60,
-          //             padding: const EdgeInsets.symmetric(vertical: 5.0),
-          //             decoration: BoxDecoration(
-          //               color: Theme.of(context).colorScheme.tertiary, // Background color
-          //               borderRadius: BorderRadius.circular(12), // Curved edges
-          //             ),
-          //             child: Center(
-          //               child: Text(
-          //                 'Recents',
-          //                 style: TextStyle(
-          //                     color: Theme.of(context).colorScheme.tertiaryContainer,
-          //                     fontFamily: 'Inter',
-          //                     fontSize: 10,
-          //                     fontWeight: FontWeight.w400),
-          //               ),
-          //             ),
-          //           ),
-          //         ),
-          //         const SizedBox(
-          //           width: 15,
-          //         ),
-          //         GestureDetector(
-          //           onTap: () {
-          //           },
-          //           child: Container(
-          //             width: 40,
-          //             padding: const EdgeInsets.symmetric(vertical: 5.0),
-          //             decoration: BoxDecoration(
-          //               color: Theme.of(context).colorScheme.primary, // Background color
-          //               borderRadius: BorderRadius.circular(12), // Curved edges
-          //             ),
-          //             child: Center(
-          //               child: Text(
-          //                 'All',
-          //                 style: TextStyle(
-          //                     color: Theme.of(context).colorScheme.onSecondaryContainer,
-          //                     fontFamily: 'Inter',
-          //                     fontSize: 10,
-          //                     fontWeight: FontWeight.w400),
-          //               ),
-          //             ),
-          //           ),
-          //         ),
-          //       ],
-          //     )
-          //   ),
-          // ),
           Padding(
             padding: const EdgeInsets.only(left: 21, top: 0),
             child: Container(
@@ -669,36 +988,41 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
           Expanded(
             child: (userContactList.isEmpty)
                 ? SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 20),
-                      child: Column(
-                        children: [
-                          (_searchFocusNode.hasFocus) ? Lottie.asset('assets/lottie_animations/nothing_found_animation.json', width: 80) : Lottie.asset('assets/lottie_animations/no_contact_animation.json', width: 80),
-                          // FutureBuilder<LottieComposition>(
-                          //   future: _lottieComposition,
-                          //   builder: (context, snapshot) {
-                          //     if (snapshot.connectionState == ConnectionState.done) {
-                          //       if (snapshot.hasError) {
-                          //         return const Center(child: Text('Error loading animation'));
-                          //       } else {
-                          //         return Lottie(composition: snapshot.data, width: 80,);
-                          //       }
-                          //     } else {
-                          //       return const Center(child: CircularProgressIndicator());
-                          //     }
-                          //   },
-                          // ),
-                          Text((_searchFocusNode.hasFocus) ? 'Search result not found' : 'You have no saved friends or groups', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: 'Inter', fontSize: 8),)
-                        ],
+              child: Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: Column(
+                  children: [
+                    (_searchFocusNode.hasFocus)
+                        ? Lottie.asset(
+                      'assets/lottie_animations/nothing_found_animation.json',
+                      width: 80,
+                    )
+                        : Lottie.asset(
+                      'assets/lottie_animations/no_contact_animation.json',
+                      width: 80,
+                    ),
+                    Text(
+                      (_searchFocusNode.hasFocus)
+                          ? 'Search result not found'
+                          : 'You have no saved friends or groups',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontFamily: 'Inter',
+                        fontSize: 8,
                       ),
                     ),
-                  )
+                  ],
+                ),
+              ),
+            )
                 : SingleChildScrollView(
               child: Column(
-                children: (_searchController.text == '') ? userContactListWidgets : filteredUserRecentsListWidgets,
+                children: (_searchController.text.isEmpty)
+                    ? userContactListWidgets
+                    : filteredUserRecentsListWidgets,
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -726,7 +1050,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 8,
-                      fontWeight: FontWeight.w400,
+                      fontWeight: (entry['userIndex'] == 0) ? FontWeight.w800 : FontWeight.w400,
                       color: Theme.of(context).colorScheme.scrim,
                       fontFamily: 'Inter',
                     ),),
@@ -734,7 +1058,9 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
               ],
             ),
           ),
-          Positioned(
+          Visibility(
+            visible: (entry['userIndex'] == 0) ? false : true,
+            child: Positioned(
               top: 25,
               right: 20,
               child: Container(
@@ -744,255 +1070,191 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                   shape: BoxShape.circle,
                   color: Theme.of(context).colorScheme.secondary,
                 ),
-                child: Center(
-                  child: IconButton(
-                    onPressed: () {
-                      setState(() {
-                        newGroupUserList.removeWhere((user) => user['name'] == entry['name']);
-                        changeIsUserSelected(entry['userIndex']);
-                      });
-                    },
-                    icon: Icon(Icons.close, size: 5, color: Theme.of(context).colorScheme.scrim,),
-                  ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          newGroupUserList.removeWhere((user) => user['name'] == entry['name']);
+                          changeIsUserSelected(entry['userIndex']);
+                        });
+                      },
+                      icon: Icon(
+                        Icons.close,
+                        size: 10,
+                        color: Theme.of(context).colorScheme.scrim,
+                      ),
+                      padding: EdgeInsets.zero, // Remove default padding
+                      constraints: const BoxConstraints(), // Remove constraints to allow precise positioning
+                    ),
+                  ],
                 ),
-              )
-          ),
+              ),
+            ),
+          )
         ],
       );
     }).toList();
 
     return Padding(
-      padding: const EdgeInsets.only(top: 30, right: 20, left: 25),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(top: 20, right: 20, left: 10), //top was 10 when editGroupName was active
+      child: Stack(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  (editGroupName)
-                      ? ConstrainedBox(
-                    constraints: const BoxConstraints(
-                        minWidth: 100,
-                        maxWidth: 150// Set your desired minimum width here
-                    ),
-                    child: SizedBox(
-                        width: groupNameInputWidth,
-                        height: 45,
-                        child: Center(
-                          child: TextField(
-                            focusNode: _groupNameFocusNode,
-                            decoration: InputDecoration(
-                              labelText: '',
-                              labelStyle: TextStyle(
-                                  color: Theme.of(context).colorScheme.scrim,
-                                  fontFamily: 'Inter',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600
-                              ),
-                              contentPadding: EdgeInsets.zero,
-                              border: InputBorder.none,
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  width: 2.0,
-                                ),
-                              ),
-                              focusedBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Theme.of(context).colorScheme.tertiary,
-                                  width: 2.0,
-                                ),
-                              ),
-                            ),
-                            onChanged: (text){
-                              setState(() {
-                                newGroupName = text;
-                              });
-                            },
-                            enableSuggestions: false,
-                            autocorrect: false,
-                            controller: _groupNameController,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.scrim,
-                              fontSize: 14,
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        )
-                    ),
-                  )
-                      : ConstrainedBox(
-                      constraints: const BoxConstraints(
-                          minWidth: 100,
-                          maxWidth: 150,
-                          minHeight: 45
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 25),
-                        child: Text((newGroupName.isNotEmpty) ? newGroupName : 'GroupName',
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.scrim,
-                            fontFamily: 'Inter',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),),
-                      )
+                  IconButton(
+                      onPressed: () {
+                        resetGroupSelection();
+                      },
+                      icon: Icon(
+                        Icons.arrow_back,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.scrim,
+                      )),
+                  Text(
+                    'Create New Group',
+                    style: TextStyle(
+                        fontFamily: 'Inter',
+                        color: Theme.of(context).colorScheme.scrim,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold),
                   ),
-                  (editGroupName) ? const SizedBox(width: 10) : const SizedBox.shrink(),
-                  SizedBox(
-                    width: 25,
-                    height: 25,
-                    child: IconButton(
-                        onPressed: (){
-                          setState(() {
-                            editGroupName = !editGroupName;
-                          });
-                          _groupNameFocusNode.requestFocus();
-                        },
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.tertiary),
-                          shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                            RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5), // Adjust the radius as needed
-                            ),
-                          ),
-                        ),
-                        icon: Icon(Icons.create, color: Theme.of(context).colorScheme.scrim, size: 10,)
-                    ),
-                  )
                 ],
               ),
-              SizedBox(
-                width: 25,
-                height: 25,
-                child: IconButton(
-                    onPressed: (){
-                      setState(() {
-                        resetGroupSelection();
-                      });
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.primary,),
-                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5), // Adjust the radius as needed
-                        ),
-                      ),
-                    ),
-                    icon: Icon(Icons.close, color: Theme.of(context).colorScheme.scrim, size: 10,)
-                ),
-              )
-            ],
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: newGroupUserListWidgets,
-            ),
-          ),
-          const SizedBox(height: 20,),
-          Visibility(
-              visible: (newGroupUserListWidgets.isNotEmpty) ? true : false,
-              child: TextButton(
-                onPressed: () {},
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  minimumSize: const Size(double.infinity, 35),
-                  padding: EdgeInsets.zero,
-                ),
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
                 child: Text(
-                  'Create',
+                  '${newGroupUserList.length} / $maxGroupSize',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.scrim,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
                     fontSize: 10,
                     fontFamily: 'Inter',
-                    fontWeight: FontWeight.w400
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 30, left: 15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: newGroupUserListWidgets,
+                  ),
+                ),
+                const SizedBox(height: 20,),
+                Visibility(
+                  visible: (newGroupUserListWidgets.isNotEmpty) ? true : false,
+                  child: TextButton(
+                    onPressed: () {
+                      if (newGroupUserList.length > 1){
+
+                      } else {
+                        InAppNotifications.show(
+                            description: 'You cannot create a group with just you',
+                            onTap: (){}
+                        );
+                      }
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      minimumSize: const Size(double.infinity, 35),
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: Text(
+                      'Create',
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.scrim,
+                          fontSize: 10,
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w400
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            ),
           )
         ],
-      ),
+      )
     );
   }
 
   Widget addingNewUser() {
     return Padding(
-      padding: const EdgeInsets.only(top: 30, right: 20, left: 25),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(top: 20, right: 20, left: 10),
+      child: Stack(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              IconButton(
+                  onPressed: () {
+                    resetContactSelection();
+                  },
+                  icon: Icon(
+                    Icons.arrow_back,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.scrim,
+                  )),
               Text('Add New Contact', style:  TextStyle(
                   fontFamily: 'Inter',
                   color: Theme.of(context).colorScheme.scrim,
                   fontSize: 14,
                   fontWeight: FontWeight.bold),),
-              SizedBox(
-                width: 25,
-                height: 25,
-                child: IconButton(
-                    onPressed: (){
-                      resetContactSelection();
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all<Color>(Theme.of(context).colorScheme.primary,),
-                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5), // Adjust the radius as needed
-                        ),
-                      ),
-                    ),
-                    icon: Icon(Icons.close, color: Theme.of(context).colorScheme.scrim, size: 10,)
-                ),
-              )
             ],
           ),
-          newContactFields(),
-          const SizedBox(height: 10,),
-          Visibility(
-              visible: true,
-              child: TextButton(
-                onPressed: () {
-                  if(_usernameController.text.isNotEmpty){
-                    addToContactList(_usernameController.text);
-                  } else{
-                    InAppNotifications.show(
-                      description: 'Username field is empty',
-                      onTap: () {}
-                    );
-                  }
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7),
+          Padding(
+            padding: const EdgeInsets.only(top: 40, left: 15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                newContactFields(),
+                const SizedBox(height: 10,),
+                Visibility(
+                  visible: true,
+                  child: TextButton(
+                    onPressed: () {
+                      if(_usernameController.text.isNotEmpty){
+                        addToContactList(_usernameController.text);
+                      } else{
+                        InAppNotifications.show(
+                            description: 'Username field is empty',
+                            onTap: () {}
+                        );
+                      }
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      minimumSize: const Size(double.infinity, 35),
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: Text(
+                      'Add',
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.scrim,
+                          fontSize: 10,
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w400
+                      ),
+                    ),
                   ),
-                  minimumSize: const Size(double.infinity, 35),
-                  padding: EdgeInsets.zero,
-                ),
-                child: Text(
-                  'Add',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.scrim,
-                    fontSize: 10,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w400
-                  ),
-                ),
-              ),
+                )
+              ],
+            ),
           )
         ],
       )

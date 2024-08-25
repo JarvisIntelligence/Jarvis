@@ -14,6 +14,15 @@ class MyProfilePage extends StatefulWidget {
 }
 
 class _MyProfilePageState extends State<MyProfilePage> {
+  TextEditingController nameController = TextEditingController();
+  TextEditingController usernameController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController bioController = TextEditingController();
+
+  String name = 'Booty Slayer';
+  String userName = '@bootyslayer';
+  String email = 'remi@gmail.com';
+  String bio = 'Passionate developer with a love for creating intuitive and dynamic user experiences. Enjoys exploring new technologies and continuously learning to stay ahead in the tech world. In my free time, you can find me hiking, reading sci-fi novels, or experimenting with new recipes in the kitchen.';
 
   void onImageLoadFailed(error) {
     String errorMessage = '';
@@ -26,6 +35,20 @@ class _MyProfilePageState extends State<MyProfilePage> {
         description: errorMessage,
         onTap: () {}
     );    // Place your function logic here
+  }
+
+  void showEditProfileSheet(BuildContext context, String typeName, TextEditingController inputController, Function(String) onSave) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: keyboardHeight),
+          child: editProfileSheet(typeName, inputController, onSave),
+        );
+      },
+    );
   }
 
   @override
@@ -44,7 +67,6 @@ class _MyProfilePageState extends State<MyProfilePage> {
               profileImage(),
               credits(),
               userDetails(),
-              // otherProfileOptions()
             ],
           ),
         )
@@ -100,12 +122,12 @@ class _MyProfilePageState extends State<MyProfilePage> {
                               return PhotoView(
                                 minScale: PhotoViewComputedScale.contained, // Ensure image is contained within the screen bounds
                                 maxScale: PhotoViewComputedScale.covered * 2.0, // Adjust the maximum scale as needed
-                                imageProvider: const NetworkImage('https://randomuser.me/api/portraits/men/30.jpg'),
+                                imageProvider: const NetworkImage('https://randomuser.me/api/portraits/lego/6.jpg'),
                               );
                             }));
                           },
                           child: CachedNetworkImage(
-                              imageUrl: 'https://randomuser.me/api/portraits/men/30.jpg',
+                              imageUrl: 'https://randomuser.me/api/portraits/lego/6.jpg',
                               imageBuilder: (context, imageProvider) => CircleAvatar(
                                   radius: 40,
                                   backgroundColor: Colors.grey[300],
@@ -193,9 +215,11 @@ class _MyProfilePageState extends State<MyProfilePage> {
           userDetail(
               Image.asset('assets/icons/coin_icon.png', width: 15, color: Theme.of(context).primaryColor,),
               'JarvisCoin',
-              '200',
+              '0',
               'add',
-              20
+              20,
+              null,
+              (newValue){}
           ),
         ],
       ),
@@ -220,39 +244,64 @@ class _MyProfilePageState extends State<MyProfilePage> {
             ),
           ),
           userDetail(
-              Icon(Icons.person, color: Theme.of(context).primaryColor, size: 15,),
-              'Name',
-              'Booty Slayer',
-              'edit',
-              15
+            Icon(Icons.person, color: Theme.of(context).primaryColor, size: 15,),
+            'Name',
+            name,
+            'edit',
+            15,
+            nameController,
+            (newValue) {
+              setState(() {
+                name = newValue;
+              });
+            },
           ),
           userDetail(
-              Image.asset('assets/icons/at_icon.png', width: 15, color: Theme.of(context).primaryColor,),
-              'Username',
-              '@bootyslayer',
-              'edit',
-              15
+            Image.asset('assets/icons/at_icon.png', width: 15, color: Theme.of(context).primaryColor,),
+            'Username',
+            userName,
+            'edit',
+            15,
+            usernameController,
+            (newValue) {
+              setState(() {
+                userName = newValue;
+              });
+            },
           ),
           userDetail(
-              Icon(Icons.email, color: Theme.of(context).primaryColor, size: 15,),
-              'Email',
-              'remi@gmail.com',
-              'edit',
-              15
+            Icon(Icons.email, color: Theme.of(context).primaryColor, size: 15,),
+            'Email',
+            email,
+            'edit',
+            15,
+            emailController,
+            (newValue) {
+              setState(() {
+                email = newValue;
+              });
+            },
           ),
           userDetail(
-              Icon(Icons.notes, color: Theme.of(context).primaryColor, size: 15,),
-              'Bio',
-              'Passionate developer with a love for creating intuitive and dynamic user experiences. Enjoys exploring new technologies and continuously learning to stay ahead in the tech world. In my free time, you can find me hiking, reading sci-fi novels, or experimenting with new recipes in the kitchen.',
-              'edit',
-              15
+            Icon(Icons.notes, color: Theme.of(context).primaryColor, size: 15,),
+            'Bio',
+            bio,
+            'edit',
+            15,
+            bioController,
+            (newValue) {
+              setState(() {
+                bio = newValue;
+              });
+            },
           ),
+
         ],
       ),
     );
   }
 
-  Widget userDetail(var icon, String title, String value, String iconButton, double iconButtonSize) {
+  Widget userDetail(var icon, String title, String value, String iconButton, double iconButtonSize, TextEditingController? inputController, Function(String) onSave,) {
     return Container(
       margin: EdgeInsets.only(bottom: (title != '') ? 5 : 5, top: (title != '') ? 10 : 5),
       child: Row(
@@ -270,11 +319,11 @@ class _MyProfilePageState extends State<MyProfilePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 (title != '')
-                ? Column(
+                    ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     (title == 'Email')
-                    ? Row(
+                        ? Row(
                       children: [
                         Text(title, style: TextStyle(
                             color: Theme.of(context).primaryColor,
@@ -288,11 +337,11 @@ class _MyProfilePageState extends State<MyProfilePage> {
                         Icon(Icons.verified, color: Theme.of(context).colorScheme.tertiary, size: 10,)
                       ],
                     )
-                    : Text(title, style: TextStyle(
-                      color: Theme.of(context).primaryColor,
-                      fontFamily: 'Inter',
-                      fontSize: 10,
-                      fontWeight: FontWeight.w400
+                        : Text(title, style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontFamily: 'Inter',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w400
                     ),),
                     SizedBox(
                       width: (title != 'Bio') ? 150 : 200,
@@ -308,14 +357,18 @@ class _MyProfilePageState extends State<MyProfilePage> {
                     )
                   ],
                 )
-                : Text(value, style: TextStyle(
+                    : Text(value, style: TextStyle(
                     color: Theme.of(context).colorScheme.scrim,
                     fontFamily: 'Inter',
                     fontSize: 12,
                     fontWeight: FontWeight.w400
                 ),),
                 IconButton(
-                    onPressed: (){},
+                    onPressed: () {
+                      if (inputController != null) {
+                        showEditProfileSheet(context, title, inputController, onSave);
+                      }
+                    },
                     icon: Icon((iconButton == 'edit') ? Icons.edit : (iconButton == 'add') ? Icons.add : Icons.arrow_forward, size: iconButtonSize, color: Theme.of(context).colorScheme.tertiary,)
                 ),
               ],
@@ -326,39 +379,114 @@ class _MyProfilePageState extends State<MyProfilePage> {
     );
   }
 
-  // Widget otherProfileOptions() {
-  //   return Container(
-  //     margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-  //     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-  //     decoration: BoxDecoration(
-  //       borderRadius: BorderRadius.circular(10),
-  //       color: const Theme.of(context).colorScheme.secondary,
-  //     ),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         const Text('Messaging Options', style: TextStyle(
-  //             fontSize: 8,
-  //             fontFamily: 'Inter',
-  //             color: Theme.of(context).primaryColor
-  //         ),
-  //         ),
-  //         userDetail(
-  //             const Icon(Icons.star, color: Theme.of(context).primaryColor, size: 15,),
-  //             '',
-  //             'Starred Messages',
-  //             'forward',
-  //             15
-  //         ),
-  //         userDetail(
-  //             const Icon(Icons.block, color: Theme.of(context).primaryColor, size: 15,),
-  //             '',
-  //             'Blocked Contacts',
-  //             'forward',
-  //             15
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+  Widget editProfileSheet(String typeName, TextEditingController inputController, Function(String) onSave) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      color: Theme.of(context).colorScheme.surface,
+      height: 250, // Adjust height as needed
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Edit $typeName',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.scrim,
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(
+            height: 30,
+          ),
+          TextField(
+            maxLength: (typeName == 'Bio') ? 70 : null,
+            buildCounter: (
+                BuildContext context, {
+                  required int currentLength,
+                  required bool isFocused,
+                  required int? maxLength,
+                }) {
+              return Text(
+                (typeName == 'Bio') ? '$currentLength / $maxLength' : '',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  fontSize: 10,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w400,
+                ),
+              );
+            },
+            controller: inputController,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.scrim,
+              fontSize: 12,
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w400,
+            ),
+            decoration: InputDecoration(
+              labelText: typeName,
+              hintText: (typeName == 'Bio') ? 'Max number of characters allowed is 70' : '',
+              hintStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                fontSize: 12,
+                fontFamily: 'Inter',
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w400,
+              ),
+              labelStyle: TextStyle(
+                color: Theme.of(context).primaryColor,
+                fontSize: 12,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400,
+              ),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2.0,
+                ),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.tertiary,
+                  width: 2.0,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+          TextButton(
+            onPressed: () {
+              if (inputController.text.isNotEmpty) {
+                onSave(inputController.text);
+                Navigator.pop(context);
+                inputController.text = '';
+                InAppNotifications.show(
+                  description: 'Your $typeName has been changed successfully',
+                  onTap: () {},
+                );
+              }
+            },
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.green,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              minimumSize: const Size(double.infinity, 35),
+              padding: EdgeInsets.zero,
+            ),
+            child: Text(
+              'Save',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.scrim,
+                fontSize: 10,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

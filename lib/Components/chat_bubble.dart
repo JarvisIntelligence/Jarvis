@@ -305,10 +305,10 @@ class _ChatBubbleState extends State<ChatBubble> {
           sent: widget.isSent,
           chatId: widget.chatId,
           senderName: (widget.isGroup && !widget.isSender) ? widget.senderName : null,
-          delivered: widget.isDelivered,
+          delivered: true,
           textStyle: const TextStyle(
               color: Colors.white,
-              fontSize: 8,
+              fontSize: 6,
               fontFamily: 'Inter',
               fontWeight: FontWeight.w400
           ),

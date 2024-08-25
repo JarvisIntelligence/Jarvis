@@ -2,7 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jarvis_app/Components/SettingsComponents/AboutSettings/about_settings.dart';
+import 'package:jarvis_app/Components/SettingsComponents/AppLanguageSettings/app_language_settings.dart';
 import 'package:jarvis_app/Components/SettingsComponents/ChatSettings/chat_settings.dart';
+import 'package:jarvis_app/Components/SettingsComponents/HelpAndSupportSettings/help_and_support_settings.dart';
+import 'package:jarvis_app/Components/SettingsComponents/HelpAndSupportSettings/reportBug.dart';
+import 'package:jarvis_app/Components/archived_chats.dart';
 import 'package:jarvis_app/Components/chat.dart';
 import 'package:jarvis_app/Components/ChangeNotifiers/user_chat_list_change_notifier.dart';
 import 'package:jarvis_app/Pages/add_new_users_page.dart';
@@ -40,6 +45,7 @@ Future<void> _precacheAssets() async {
     precacheSvgPicture('assets/icons/google.svg'),
     precacheSvgPicture('assets/icons/ai_logo.svg'),
     precacheSvgPicture('assets/icons/logo_name.svg'),
+    precacheSvgPicture('assets/icons/push_pin_icon.svg'),
   ]);
 }
 
@@ -48,8 +54,13 @@ Future precacheSvgPicture(String svgPath) async {
   await svg.cache.putIfAbsent(logo.cacheKey(null), () => logo.loadBytes(null));
 }
 
+Future<void> precacheImageAsset(String imagePath) async {
+  final image = AssetImage(imagePath);
+  await precacheImage(image, WidgetsBinding.instance.rootElement!);
+}
+
 class MyApp extends StatefulWidget {
-  const MyApp({Key? key, required this.isLoggedIn}) : super(key: key);
+  const MyApp({super.key, required this.isLoggedIn});
 
   final bool isLoggedIn;
 
@@ -158,9 +169,41 @@ class _MyAppState extends State<MyApp> {
                   builder: (BuildContext context, GoRouterState state) {
                   return const ChatSettings();
                   },
+                ),
+                GoRoute(
+                  path: 'aboutsettings',
+                  builder: (BuildContext context, GoRouterState state) {
+                    return const AboutSettings();
+                  },
+                ),
+                GoRoute(
+                  path: 'applanguage',
+                  builder: (BuildContext context, GoRouterState state) {
+                    return const AppLanguageSettings();
+                  },
+                ),
+                GoRoute(
+                  path: 'helpandsupportsettings',
+                  builder: (BuildContext context, GoRouterState state) {
+                    return const HelpAndSupportSettings();
+                  },
+                  routes:  <RouteBase>[
+                    GoRoute(
+                      path: 'reportbug',
+                      builder: (BuildContext context, GoRouterState state) {
+                        return const ReportBug();
+                      },
+                    ),
+                  ]
                 )
               ]
-            )
+            ),
+            GoRoute(
+              path: 'archivedchats',
+              builder: (BuildContext context, GoRouterState state) {
+                return const ArchivedChats();
+              },
+            ),
           ],
         ),
       ],

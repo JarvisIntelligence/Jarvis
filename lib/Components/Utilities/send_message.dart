@@ -49,6 +49,52 @@ class SendMessage {
     return updatedUserChat;
   }
 
+  List<Map<String, dynamic>> sendLinkMessageBubbleChat(List<Map<String, dynamic>> userChat, String message) {
+    // Get today's date
+    DateTime today = DateTime.now();
+    String formattedDate = "${_getMonthName(today.month)} ${today.day}, ${today.year}";
+
+    // Create a new message
+    Map<String, dynamic> newMessage = {
+      'isSender': true,
+      'isStarred': false,
+      'messageType': 'link',
+      'fileName': '',
+      'time': today.toString(),
+      'message': message,
+      'senderName': "Me",
+      'isDelivered': false,
+      'isSent': false,
+      'isSeen': false,
+      'duration': (Duration.zero).toString(),
+      'file': File(''),
+      'extension': '',
+      'size': '',
+      'fileLogo': '',
+    };
+
+    // Create a new copy of userChat to avoid direct mutation
+    // List<Map<String, dynamic>> updatedUserChat = List<Map<String, dynamic>>.from(userChat);
+    List<Map<String, dynamic>> updatedUserChat = [...userChat];
+
+    // Check if the date already exists in the userChat list
+    bool dateExists = false;
+    for (var chat in updatedUserChat) {
+      if (chat.containsKey(formattedDate)) {
+        chat[formattedDate].add(newMessage);
+        dateExists = true;
+        break;
+      }
+    }
+
+    // If the date does not exist, create a new entry for the date
+    if (!dateExists) {
+      updatedUserChat.add({formattedDate: [newMessage]});
+    }
+
+    return updatedUserChat;
+  }
+
   Future<Duration?> getAudioRecordingDuration(String filePath) async {
     Directory? appDocDirectory = await getExternalStorageDirectory();
     String dirPath = '${appDocDirectory?.path}/Media/Audio Recordings/Sent';

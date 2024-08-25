@@ -44,69 +44,70 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
                           height: 20,
                         ),
                         settingOption(
-                          Icon(Icons.notifications, color: Theme.of(context).primaryColor, size: 20,),
+                          Icon(Icons.notifications_outlined, color: Theme.of(context).primaryColor, size: 20,),
                           'Notifications',
                             (){}
                         ),
                         settingOption(
-                          Icon(Icons.chat, color: Theme.of(context).primaryColor, size: 20,),
+                          Icon(Icons.chat_outlined, color: Theme.of(context).primaryColor, size: 20,),
                           'Chat Settings',
                             (){
                             context.go('/homepage/usersettings/chatsettings');
                             }
                         ),
                         settingOption(
-                            Icon(Icons.block, color: Theme.of(context).primaryColor, size: 20,),
+                            Icon(Icons.block_outlined, color: Theme.of(context).primaryColor, size: 20,),
                             'Blocked Contacts',
                               (){}
                         ),
                         settingOption(
-                            Icon(Icons.star, color: Theme.of(context).primaryColor, size: 20,),
+                            Icon(Icons.star_outline, color: Theme.of(context).primaryColor, size: 20,),
                             'Starred Messages',
                                 (){}
                         ),
                         settingOption(
-                          Icon(Icons.language, color: Theme.of(context).primaryColor, size: 20,),
+                          Icon(Icons.language_outlined, color: Theme.of(context).primaryColor, size: 20,),
                           'App Language',
-                            (){}
+                          (){
+                            context.push('/homepage/usersettings/applanguage');
+                          }
                         ),
                         settingOption(
-                          Icon(Icons.password, color: Theme.of(context).primaryColor, size: 20,),
+                          Icon(Icons.password_outlined, color: Theme.of(context).primaryColor, size: 20,),
                           'Change Password',
                             (){}
                         ),
                         settingOption(
-                          Icon(Icons.payment, color: Theme.of(context).primaryColor, size: 20,),
+                          Icon(Icons.payment_outlined, color: Theme.of(context).primaryColor, size: 20,),
                           'Billings and Payments',
                             (){}
                         ),
                         settingOption(
-                          Icon(Icons.update, color: Theme.of(context).primaryColor, size: 20,),
+                          Icon(Icons.update_outlined, color: Theme.of(context).primaryColor, size: 20,),
                           'App Update',
                             (){}
                         ),
                         settingOption(
-                          Icon(Icons.help, color: Theme.of(context).primaryColor, size: 20,),
+                          Icon(Icons.help_outline, color: Theme.of(context).primaryColor, size: 20,),
                           'Help & Support',
-                            (){}
+                            (){
+                              context.push('/homepage/usersettings/helpandsupportsettings');
+                            }
                         ),
                         settingOption(
-                          Icon(Icons.info, color: Theme.of(context).primaryColor, size: 20,),
+                          Icon(Icons.info_outlined, color: Theme.of(context).primaryColor, size: 20,),
                           'About',
-                            (){}
+                            (){
+                              context.push('/homepage/usersettings/aboutsettings');
+                            }
                         ),
                         settingOption(
-                          Icon(Icons.attribution, color: Theme.of(context).primaryColor, size: 20,),
-                          'Credits',
-                            (){}
-                        ),
-                        settingOption(
-                          const Icon(Icons.logout, color: Colors.red, size: 20,),
+                          const Icon(Icons.logout_outlined, color: Colors.red, size: 20,),
                           'Log Out',
                           logOut
                         ),
                         settingOption(
-                            const Icon(Icons.delete, color: Colors.red, size: 20,),
+                            const Icon(Icons.delete_outlined, color: Colors.red, size: 20,),
                             'Delete Account',
                             logOut
                         ),
@@ -148,6 +149,7 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
     return GestureDetector(
       onTap: function,
       child: Container(
+        color: Colors.transparent,
         padding: const EdgeInsets.only(bottom: 20, top: 20),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
