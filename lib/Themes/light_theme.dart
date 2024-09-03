@@ -19,7 +19,8 @@ final ThemeData lightTheme = ThemeData(
     tertiaryFixedDim: const Color(0x66CCCCCC), // semi-transparent light grey
     secondaryFixed: const Color(0xFF000000),
     secondaryFixedDim: const Color(0xFF7A6BEF), // a medium purple
-    primaryFixed: const Color(0xFF5538EE)
+    primaryFixed: const Color(0xFF5538EE),
+    surfaceContainer: const Color(0xFFB0BEC5)
   ),
   primaryColor: Colors.black38, // semi-transparent black equivalent
 );

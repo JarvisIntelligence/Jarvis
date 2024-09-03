@@ -1,71 +1,52 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
+import 'initialize_database.dart';
 
 class ContactListDatabaseHelper {
   static final ContactListDatabaseHelper _instance = ContactListDatabaseHelper._internal();
-  static Database? _database;
 
-  factory ContactListDatabaseHelper() {
-    return _instance;
-  }
+  factory ContactListDatabaseHelper() => _instance;
 
   ContactListDatabaseHelper._internal();
 
   Future<Database> get database async {
-    if (_database != null) return _database!;
-
-    _database = await _initDatabase();
-    return _database!;
-  }
-
-  Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'userDataBase.db');
-
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: (db, version) {
-        return db.execute(
-          'CREATE TABLE IF NOT EXISTS contactList ('
-              'id TEXT PRIMARY KEY, '
-              'userImage TEXT, '
-              'userImage2 TEXT, '
-              'userImage3 TEXT, '
-              'numberOfUsers TEXT, '
-              'isGroup INTEGER, '
-              'name TEXT, '
-              'groupImage TEXT, '
-              'userBio TEXT'
-              ')',
-        );
-      },
-    );
+    return await DatabaseProvider().database;
   }
 
   Future<List<Map<String, dynamic>>> getAllContacts() async {
     final db = await database;
 
-    final List<Map<String, dynamic>> records = await db.query('contactList');
+    // Perform a join between contactList and chatList tables
+    final List<Map<String, dynamic>> records = await db.rawQuery('''
+    SELECT cl.*, 
+           ch.isPinned AS isPinned, 
+           ch.isArchived AS isArchived 
+    FROM contactList AS cl
+    LEFT JOIN chatList AS ch 
+    ON cl.id = ch.id
+    ORDER BY isPinned DESC, lastMessageTime DESC
+  ''');
 
-    // Convert integer to boolean for each record
+    // Map the result to the desired format with default values
     return records.map((record) {
       return {
         'userImage3': record['userImage3'],
         'numberOfUsers': record['numberOfUsers'],
-        'isGroup': record['isGroup'] == 1, // Convert integer to boolean
+        'isGroup': record['isGroup'] == 1,
         'userImage': record['userImage'],
         'userImage2': record['userImage2'],
         'name': record['name'],
         'groupImage': record['groupImage'],
         'id': record['id'],
-        'userBio': record['userBio']
+        'userBio': record['userBio'],
+        'isPinned': (record['isPinned'] as int? ?? 0) == 1,
+        'isArchived': (record['isArchived'] as int? ?? 0) == 1
       };
     }).toList();
   }
 
   Future<void> insertContact(Map<String, dynamic> contact) async {
     final db = await database;
-    await db.insert('contactList', contact);
+    await db.insert('contactList', contact, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<int> updateContact(Map<String, dynamic> contact) async {
@@ -89,10 +70,7 @@ class ContactListDatabaseHelper {
 
   Future<void> deleteAllRecords() async {
     final db = await database;
-    await db.delete(
-      'contactList',
-      where: '1=1', // This condition is always true, so all records are deleted
-    );
+    await db.delete('contactList', where: '1=1');
   }
 
   Future<void> dropTable() async {
@@ -100,4 +78,3 @@ class ContactListDatabaseHelper {
     await db.execute('DROP TABLE IF EXISTS contactList');
   }
 }
-

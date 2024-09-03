@@ -190,7 +190,7 @@ class _ChatBubbleState extends State<ChatBubble> {
   Widget build(BuildContext context) {
     List<Widget>chatOrder = [
       (widget.messageType == 'text') ? chatBubble() : (widget.messageType == 'audio') ? audioBubble() : (widget.messageType == 'image') ? photoBubble() : (widget.messageType == 'file') ? fileBubble() : videoBubble(),
-      Text(widget.chatTime, style: const TextStyle(color: Color(0xFF979C9E), fontSize: 8, fontFamily: 'Inter',),),
+      Text(widget.chatTime, style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer, fontSize: 8, fontFamily: 'Inter',),),
     ];
     List<Widget> reversedChatOrder = chatOrder.reversed.toList();
 
@@ -260,8 +260,8 @@ class _ChatBubbleState extends State<ChatBubble> {
               fontWeight: FontWeight.w400
           ),
           userName: (widget.isGroup && !widget.isSender) ? widget.senderName : null,
-          userNameTextStyle: const TextStyle(
-              color: Color(0xFF979C9E),
+          userNameTextStyle: TextStyle(
+              color: Theme.of(context).colorScheme.onSecondaryContainer,
               fontSize: 12,
               fontFamily: 'Inter',
               fontWeight: FontWeight.w400
@@ -462,12 +462,15 @@ class _ChatBubbleState extends State<ChatBubble> {
                 widget.changeIsChatSelected();
                 widget.showCopyMessage();
               },
-              child: const Icon(Icons.copy, size: 12, color: Color(0xFF979C9E),),
+              child: Icon(Icons.copy, size: 12, color: Theme.of(context).colorScheme.onSecondaryContainer,),
             ), // copy
             const SizedBox(width: 10,),
             GestureDetector(
                 onTap: (){},
-                child: Image.asset('assets/icons/push_pin_icon.png', width: 14, color: const Color(0xFF979C9E),)
+                child: SvgPicture.asset('assets/icons/push_pin_icon.svg', height: 14, colorFilter: ColorFilter.mode(
+                  Theme.of(context).colorScheme.onSecondaryContainer,
+                  BlendMode.srcIn,
+                ),)
             ), // pin
             const SizedBox(width: 10,),
             GestureDetector(
@@ -486,12 +489,12 @@ class _ChatBubbleState extends State<ChatBubble> {
                 size: 14,
                 color: (isStarred)
                     ? const Color(0xFF6B4EFF)
-                    : const Color(0xFF979C9E),),
+                    : Theme.of(context).colorScheme.onSecondaryContainer,),
             ), // star
             const SizedBox(width: 10,),
             GestureDetector(
                 onTap: handleReplyButtonPressed,
-                child: Image.asset('assets/icons/reply_icon.png', width: 14, color: const Color(0xFF979C9E),)
+                child: Image.asset('assets/icons/reply_icon.png', width: 14, color: Theme.of(context).colorScheme.onSecondaryContainer,)
             ), // reply
           ],
         ),

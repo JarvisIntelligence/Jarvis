@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jarvis_app/Components/recent_list_chat.dart';
 import 'package:jarvis_app/Components/textfield.dart';
@@ -7,7 +10,8 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:sqflite/sqflite.dart';
-import '../Components/Utilities/SqfliteHelperClasses/contactListDatabaseHelper.dart';
+import '../Components/Utilities/BackendUtilities/friends.dart';
+import '../Components/Utilities/SqfliteHelperClasses/contact_list_database_helper.dart';
 import '../Components/cache_image.dart';
 import 'package:uuid/uuid.dart';
 
@@ -20,7 +24,6 @@ class AddNewUsersPage extends StatefulWidget {
 }
 
 class _AddNewUsersPageState extends State<AddNewUsersPage> {
-  // final storage = const FlutterSecureStorage();
   late final Database db;
 
   final FocusNode _searchFocusNode = FocusNode();
@@ -37,6 +40,9 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
   bool editGroupName = false;
   double groupNameInputWidth = 90.0;
   int maxGroupSize = 10;
+  bool progressVisible = false;
+
+  final storage = const FlutterSecureStorage();
 
   int _currentPageIndex = 1;
   final _controller = PageController(
@@ -518,6 +524,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
     _groupNameController.dispose();
     super.dispose();
   }
+
   Future<void> _initializeDatabase() async {
     db = await ContactListDatabaseHelper().database;
   }
@@ -560,6 +567,12 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
     }
   }
 
+  void updateProgressVisible() {
+    setState(() {
+      progressVisible = !progressVisible;
+    });
+  }
+
   void addingUsersToNewGroup(String name, String profileImage, int userIndex) {
     if (newGroupUserList.length >= maxGroupSize){
       InAppNotifications.show(
@@ -594,8 +607,10 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
     });
   }
 
-  void addToContactList(String userName) {
-    final bool userExists = userContactList.any((contact) => contact['name'] == userName);
+  Future<void> addToContactList(String userName, String jwtToken) async {
+
+    final bool userExists = userContactList.any((contact) => (contact['name'] as String).toLowerCase() == userName.toLowerCase());
+
     const uuid = Uuid();
     String uniqueId = uuid.v4();
 
@@ -606,35 +621,38 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
       );
       return;
     }
-    final List<Map<String, dynamic>> copyUserContactList = [...userContactList];
-    Map<String, dynamic> userContact = {
-      'userImage3': '',
-      'numberOfUsers': "1",
-      'isGroup': false,
-      'userImage': 'https://randomuser.me/api/portraits/men/32.jpg',
-      'userImage2': '',
-      'name': userName,
-      'groupImage': '',
-      'id': uniqueId.toString(),
-      'userBio': 'I love Jollof rice and chicken so much that it can kill me'
-    };
-    Map<String, dynamic> userContactDatabase = {
-      'userImage3': '',
-      'numberOfUsers': "1",
-      'isGroup': 0,
-      'userImage': 'https://randomuser.me/api/portraits/men/32.jpg',
-      'userImage2': '',
-      'name': userName,
-      'groupImage': '',
-      'id': uniqueId.toString(),
-      'userBio': 'I love Jollof rice and chicken so much that it can kill me'
-    };
-    copyUserContactList.add(userContact);
-    setState(() {
-      userContactList = copyUserContactList;
-    });
-    saveContactToStorage(userContactDatabase);
-    resetContactSelection();
+    bool isSavedOnline = await Friends().addUserToFriendList(jwtToken, userName);
+    if (isSavedOnline) {
+      final List<Map<String, dynamic>> copyUserContactList = [...userContactList];
+      Map<String, dynamic> userContact = {
+        'userImage3': '',
+        'numberOfUsers': "1",
+        'isGroup': false,
+        'userImage': 'https://randomuser.me/api/portraits/men/32.jpg',
+        'userImage2': '',
+        'name': userName.toLowerCase(),
+        'groupImage': '',
+        'id': uniqueId.toString(),
+        'userBio': 'I love Jollof rice and chicken so much that it can kill me'
+      };
+      Map<String, dynamic> userContactDatabase = {
+        'userImage3': '',
+        'numberOfUsers': "1",
+        'isGroup': 0,
+        'userImage': 'https://randomuser.me/api/portraits/men/32.jpg',
+        'userImage2': '',
+        'name': userName,
+        'groupImage': '',
+        'id': uniqueId.toString(),
+        'userBio': 'I love Jollof rice and chicken so much that it can kill me'
+      };
+      copyUserContactList.add(userContact);
+      setState(() {
+        userContactList = copyUserContactList;
+      });
+      saveContactToStorage(userContactDatabase);
+      resetContactSelection();
+    }
   }
 
   /// This has to happen only once per app
@@ -704,42 +722,65 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
     _newContactFocusNode.unfocus();
   }
 
+  Future<String> retrieveJWT() async {
+    String? jsonString = await storage.read(key: 'user_data');
+    if (jsonString != null) {
+      Map<String, dynamic> userLoggedInData = jsonDecode(jsonString);
+      return userLoggedInData['jwt_token'];
+    }
+    return '';
+  }
+
+  Future<String> retrieveUsername() async {
+    String? jsonString = await storage.read(key: 'user_data');
+    if (jsonString != null) {
+      Map<String, dynamic> userLoggedInData = jsonDecode(jsonString);
+      return userLoggedInData['userName'];
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        body: Padding(
-          padding: const EdgeInsets.only(left: 5, top: 50),
-          child: Column(
-            children: [
-              backHeader(),
-              const SizedBox(
-                height: 20,
-              ),
-              searchChatListBody(),
-              SizedBox(
-                height: (_currentPageIndex == 1) ? 120 : (_currentPageIndex == 2) ? 215 : 200,
-                child: PageView(
-                  scrollDirection: Axis.horizontal,
-                  controller: _controller,
-                  physics: const NeverScrollableScrollPhysics(),
-                  onPageChanged: (int page) {
-                    setState(() {
-                      _currentPageIndex = page;
-                    });
-                  },
-                  children: [
-                    SingleChildScrollView(
-                      child: addingNewUser(),
+        body: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 5, top: 50),
+              child: Column(
+                children: [
+                  backHeader(),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  searchChatListBody(),
+                  SizedBox(
+                    height: (_currentPageIndex == 1) ? 120 : (_currentPageIndex == 2) ? 215 : 200,
+                    child: PageView(
+                      scrollDirection: Axis.horizontal,
+                      controller: _controller,
+                      physics: const NeverScrollableScrollPhysics(),
+                      onPageChanged: (int page) {
+                        setState(() {
+                          _currentPageIndex = page;
+                        });
+                      },
+                      children: [
+                        SingleChildScrollView(
+                          child: addingNewUser(),
+                        ),
+                        addButtons(),
+                        addingUsersToGroup()
+                      ],
                     ),
-                    addButtons(),
-                    addingUsersToGroup()
-                  ],
-                ),
+                  ),
+                  Expanded(child: contactList())
+                ],
               ),
-              Expanded(child: contactList())
-            ],
-          ),
+            ),
+            loadingAnimation()
+          ],
         )
     );
   }
@@ -792,7 +833,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
             ),
             Expanded(
               child: TextField(
-                enableSuggestions: false,
+                enableSuggestions: true,
                 autocorrect: false,
                 onChanged: (a) {
                   setState(() {
@@ -963,6 +1004,8 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
           userIndex: userIndex,
           id: entryValue['id'],
           userBio: entryValue['userBio'],
+          isPinned: entryValue['isPinned'] == 1,
+          isArchived: entryValue['isArchived'] == 1
         );
       }).toList();
     }
@@ -1082,7 +1125,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                       },
                       icon: Icon(
                         Icons.close,
-                        size: 10,
+                        size: 8,
                         color: Theme.of(context).colorScheme.scrim,
                       ),
                       padding: EdgeInsets.zero, // Remove default padding
@@ -1224,15 +1267,36 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                 Visibility(
                   visible: true,
                   child: TextButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                      updateProgressVisible();
                       if(_usernameController.text.isNotEmpty){
-                        addToContactList(_usernameController.text);
+                        String username = await retrieveUsername();
+                        if(_usernameController.text == username){
+                          InAppNotifications.show(
+                              description: "Cannot add your username as a friend",
+                              onTap: () {}
+                          );                          return;
+                        }
+                        String jwtToken = await retrieveJWT();
+                        if(jwtToken != '') {
+                          bool doesUserExist = await Friends().checkIfUserExists(jwtToken, _usernameController.text);
+                          if(doesUserExist){
+                            await addToContactList(_usernameController.text, jwtToken);
+                          } else {
+                            InAppNotifications.show(
+                                description: 'User does not exist',
+                                onTap: () {}
+                            );
+                          }
+                        }
                       } else{
                         InAppNotifications.show(
                             description: 'Username field is empty',
                             onTap: () {}
                         );
                       }
+                      updateProgressVisible();
                     },
                     style: TextButton.styleFrom(
                       backgroundColor: Colors.green,
@@ -1271,6 +1335,20 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
           const SizedBox(height: 10,),
         ],
       ),
+    );
+  }
+
+  Widget loadingAnimation() {
+    return Visibility(
+        visible: progressVisible,
+        child: Container(
+          color: Colors.black87,
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height,
+          child: Center(
+            child: Lottie.asset('assets/lottie_animations/loading_animation.json', width: 80),
+          ),
+        )
     );
   }
 }

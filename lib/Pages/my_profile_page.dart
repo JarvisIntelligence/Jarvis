@@ -1,10 +1,16 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jarvis_app/Components/Utilities/BackendUtilities/friends.dart';
+import 'package:jarvis_app/Components/Utilities/BackendUtilities/profile_user.dart';
+import 'package:jarvis_app/Components/screen_loader.dart';
 import 'package:lottie/lottie.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:shimmer/shimmer.dart';
 
 class MyProfilePage extends StatefulWidget {
   const MyProfilePage({super.key});
@@ -19,10 +25,48 @@ class _MyProfilePageState extends State<MyProfilePage> {
   TextEditingController emailController = TextEditingController();
   TextEditingController bioController = TextEditingController();
 
-  String name = 'Booty Slayer';
-  String userName = '@bootyslayer';
-  String email = 'remi@gmail.com';
-  String bio = 'Passionate developer with a love for creating intuitive and dynamic user experiences. Enjoys exploring new technologies and continuously learning to stay ahead in the tech world. In my free time, you can find me hiking, reading sci-fi novels, or experimenting with new recipes in the kitchen.';
+  final storage = const FlutterSecureStorage();
+
+  String name = '';
+  String userName = '';
+  String email = '';
+  String bio = '';
+  String coins = '0';
+  String profileUrl = '';
+  bool isDataLoading = true;
+
+  bool progressVisible = false;
+
+  @override
+  void initState() {
+    init();
+    super.initState();
+  }
+
+  Future<void> init() async {
+    Map<String, dynamic> userDetails = await readJwtTokenAndID();
+    if (userDetails.isNotEmpty){
+      Map<String, dynamic> profileDetails = await ProfileUser().retrieveProfileDetails(userDetails['jwt_token'], userDetails['userID'], false);
+      setState(() {
+        name = profileDetails['profile']['fullname'];
+        userName = '${profileDetails['profile']['username']}';
+        bio = profileDetails['profile']['biography'];
+        email = profileDetails['profile']['email'];
+        coins = profileDetails['profile']['jarviscoin'].toString();
+        isDataLoading = false;
+        profileUrl = profileDetails['profile']['profilepicture'] ?? '';
+      });
+    }
+  }
+
+  Future<Map<String, dynamic>> readJwtTokenAndID() async {
+    String? jsonString = await storage.read(key: 'user_data');
+    if (jsonString != null) {
+      Map<String, dynamic> userLoggedInData = jsonDecode(jsonString);
+      return userLoggedInData;
+    }
+    return {};
+  }
 
   void onImageLoadFailed(error) {
     String errorMessage = '';
@@ -37,7 +81,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
     );    // Place your function logic here
   }
 
-  void showEditProfileSheet(BuildContext context, String typeName, TextEditingController inputController, Function(String) onSave) {
+  void showEditProfileSheet(BuildContext context, String typeName, TextEditingController inputController, Function(String) onSave, String value) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -45,32 +89,55 @@ class _MyProfilePageState extends State<MyProfilePage> {
         final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
         return Padding(
           padding: EdgeInsets.only(bottom: keyboardHeight),
-          child: editProfileSheet(typeName, inputController, onSave),
+          child: editProfileSheet(typeName, inputController, onSave, value),
         );
       },
     );
+  }
+
+  void updateProgressVisible() {
+    setState(() {
+      progressVisible = !progressVisible;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.only(left: 5, top: 50),
-          child: Column(
-            children: [
-              backHeader(),
-              const SizedBox(
-                height: 20,
-              ),
-              profileImage(),
-              credits(),
-              userDetails(),
-            ],
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 5, top: 50),
+                child: Column(
+                  children: [
+                    backHeader(),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    profileImage(),
+                    credits(),
+                    userDetails(),
+                  ],
+                ),
+              )
           ),
-        )
+          LoadingAnimation(progressVisible: progressVisible,)
+        ],
       )
+    );
+  }
+
+  Widget shimmerPlaceholder(double width, double height) {
+    return Shimmer.fromColors(
+      baseColor: Theme.of(context).colorScheme.surfaceContainer,
+      highlightColor: Theme.of(context).colorScheme.primary,
+      child: Container(
+        width: width,
+        height: height,
+        color: Colors.white,
+      ),
     );
   }
 
@@ -122,31 +189,37 @@ class _MyProfilePageState extends State<MyProfilePage> {
                               return PhotoView(
                                 minScale: PhotoViewComputedScale.contained, // Ensure image is contained within the screen bounds
                                 maxScale: PhotoViewComputedScale.covered * 2.0, // Adjust the maximum scale as needed
-                                imageProvider: const NetworkImage('https://randomuser.me/api/portraits/lego/6.jpg'),
+                                imageProvider: NetworkImage(profileUrl),
                               );
                             }));
                           },
-                          child: CachedNetworkImage(
-                              imageUrl: 'https://randomuser.me/api/portraits/lego/6.jpg',
-                              imageBuilder: (context, imageProvider) => CircleAvatar(
-                                  radius: 40,
-                                  backgroundColor: Colors.grey[300],
-                                  backgroundImage: imageProvider// Image radius
+                          child: profileUrl.isNotEmpty
+                              ? CachedNetworkImage(
+                                  imageUrl: profileUrl,
+                                  imageBuilder: (context, imageProvider) => CircleAvatar(
+                                      radius: 40,
+                                      backgroundColor: Colors.grey[300],
+                                      backgroundImage: imageProvider// Image radius
+                                  ),
+                                  placeholder: (context, url) => CircleAvatar(
+                                      radius: 40,
+                                      backgroundColor: Colors.grey[300],
+                                      child: Lottie.asset('assets/lottie_animations/loading_animation.json')
+                                  ),
+                                  errorWidget: (context, url, error) {
+                                    onImageLoadFailed(error); // Call the function when image loading fails
+                                    return CircleAvatar(
+                                      radius: 40,
+                                      backgroundColor: Colors.grey[300],
+                                      backgroundImage: const AssetImage('assets/icons/blank_profile.png'),
+                                    );
+                                  }
+                              )
+                              : CircleAvatar(
+                                radius: 40,
+                                backgroundColor: Colors.grey[300],
+                                backgroundImage: const AssetImage('assets/icons/blank_profile.png'),
                               ),
-                              placeholder: (context, url) => CircleAvatar(
-                                  radius: 40,
-                                  backgroundColor: Colors.grey[300],
-                                  child: Lottie.asset('assets/lottie_animations/loading_animation.json')
-                              ),
-                              errorWidget: (context, url, error) {
-                                onImageLoadFailed(error); // Call the function when image loading fails
-                                return CircleAvatar(
-                                  radius: 40,
-                                  backgroundColor: Colors.grey[300],
-                                  backgroundImage: const AssetImage('assets/icons/blank_profile.png'),
-                                );
-                              }
-                          )
                       );
                     }
                 ),
@@ -172,9 +245,11 @@ class _MyProfilePageState extends State<MyProfilePage> {
           const SizedBox(
             height: 5,
           ),
-          SizedBox(
-            width: 150,
-            child: Text('Booty Slayer', style: TextStyle(
+          Container(
+            constraints: const BoxConstraints(
+              maxWidth: 150
+            ),
+            child: isDataLoading ? shimmerPlaceholder(80, 12) : Text(name, style: TextStyle(
                 color: Theme.of(context).colorScheme.scrim,
                 fontFamily: 'Inter',
                 fontSize: 12,
@@ -185,12 +260,19 @@ class _MyProfilePageState extends State<MyProfilePage> {
               textAlign: TextAlign.center,
             ),
           ),
-          Text('@bootyslayer', style: TextStyle(
+          Visibility(
+            visible: isDataLoading,
+            child: const SizedBox(
+              height: 5,
+            )
+          ),
+          isDataLoading ? shimmerPlaceholder(60, 10) : Text('@$userName', style: TextStyle(
               color: Theme.of(context).primaryColor,
               fontFamily: 'Inter',
               fontSize: 10,
               fontWeight: FontWeight.w400
-          ),),
+          ),)
+          ,
         ],
       )
     );
@@ -215,7 +297,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
           userDetail(
               Image.asset('assets/icons/coin_icon.png', width: 15, color: Theme.of(context).primaryColor,),
               'JarvisCoin',
-              '0',
+              coins,
               'add',
               20,
               null,
@@ -318,34 +400,41 @@ class _MyProfilePageState extends State<MyProfilePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                (title != '')
-                    ? Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     (title == 'Email')
                         ? Row(
-                      children: [
-                        Text(title, style: TextStyle(
-                            color: Theme.of(context).primaryColor,
-                            fontFamily: 'Inter',
-                            fontSize: 10,
-                            fontWeight: FontWeight.w400
-                        ),),
-                        const SizedBox(
-                          width: 3,
-                        ),
-                        Icon(Icons.verified, color: Theme.of(context).colorScheme.tertiary, size: 10,)
-                      ],
-                    )
+                            children: [
+                              Text(title, style: TextStyle(
+                                  color: Theme.of(context).primaryColor,
+                                  fontFamily: 'Inter',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w400
+                              ),),
+                              const SizedBox(
+                                width: 3,
+                              ),
+                              Icon(Icons.verified, color: Theme.of(context).colorScheme.tertiary, size: 10,)
+                            ],
+                        )
                         : Text(title, style: TextStyle(
                         color: Theme.of(context).primaryColor,
                         fontFamily: 'Inter',
                         fontSize: 10,
                         fontWeight: FontWeight.w400
                     ),),
-                    SizedBox(
-                      width: (title != 'Bio') ? 150 : 200,
-                      child: Text(value, style: TextStyle(
+                    Visibility(
+                        visible: isDataLoading,
+                        child: const SizedBox(
+                          height: 5,
+                        )
+                    ),
+                    Container(
+                      constraints: BoxConstraints(
+                        maxWidth: (title != 'Bio') ? 150 : 200
+                      ),
+                      child: isDataLoading ? shimmerPlaceholder((title != 'Bio') ? 80 : 200, 12) : Text((title == 'Username') ? '@$value' : value, style: TextStyle(
                           color: Theme.of(context).colorScheme.scrim,
                           fontFamily: 'Inter',
                           fontSize: 12,
@@ -356,20 +445,20 @@ class _MyProfilePageState extends State<MyProfilePage> {
                       ),
                     )
                   ],
-                )
-                    : Text(value, style: TextStyle(
-                    color: Theme.of(context).colorScheme.scrim,
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400
-                ),),
-                IconButton(
-                    onPressed: () {
-                      if (inputController != null) {
-                        showEditProfileSheet(context, title, inputController, onSave);
-                      }
-                    },
-                    icon: Icon((iconButton == 'edit') ? Icons.edit : (iconButton == 'add') ? Icons.add : Icons.arrow_forward, size: iconButtonSize, color: Theme.of(context).colorScheme.tertiary,)
+                ),
+                Visibility(
+                  visible: (title == 'Bio' || title == 'JarvisCoin') ? true : false,
+                  maintainSize: true,
+                  maintainAnimation: true,
+                  maintainState: true,
+                  child: IconButton(
+                      onPressed: () {
+                        if (inputController != null) {
+                          showEditProfileSheet(context, title, inputController, onSave, value);
+                        }
+                      },
+                      icon: Icon((iconButton == 'edit') ? Icons.edit : (iconButton == 'add') ? Icons.add : Icons.arrow_forward, size: iconButtonSize, color: Theme.of(context).colorScheme.tertiary,)
+                  )
                 ),
               ],
             ),
@@ -379,7 +468,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
     );
   }
 
-  Widget editProfileSheet(String typeName, TextEditingController inputController, Function(String) onSave) {
+  Widget editProfileSheet(String typeName, TextEditingController inputController, Function(String) onSave, String value) {
     return Container(
       padding: const EdgeInsets.all(20),
       color: Theme.of(context).colorScheme.surface,
@@ -456,16 +545,31 @@ class _MyProfilePageState extends State<MyProfilePage> {
           ),
           const SizedBox(height: 30),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
+              Navigator.pop(context);
+              updateProgressVisible();
               if (inputController.text.isNotEmpty) {
+                if(value == inputController.text){
+                  InAppNotifications.show(
+                    description: "Can't update. The $typeName still has the same value",
+                    onTap: () {},
+                  );
+                  return;
+                }
+                Map<String, dynamic> jwtTokenAndID = await readJwtTokenAndID();
+                String jwtToken = jwtTokenAndID['jwt_token'];
+                bool ableToUpdateProfileOnline = await ProfileUser().updateProfileDetails(jwtToken, typeName, inputController.text);
+                if (!ableToUpdateProfileOnline){
+                  return;
+                }
                 onSave(inputController.text);
-                Navigator.pop(context);
                 inputController.text = '';
                 InAppNotifications.show(
                   description: 'Your $typeName has been changed successfully',
                   onTap: () {},
                 );
               }
+              updateProgressVisible();
             },
             style: TextButton.styleFrom(
               backgroundColor: Colors.green,

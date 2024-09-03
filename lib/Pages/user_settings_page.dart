@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class UserSettingsPage extends StatefulWidget {
   const UserSettingsPage({super.key});
@@ -11,9 +13,18 @@ class UserSettingsPage extends StatefulWidget {
 }
 
 class _UserSettingsPageState extends State<UserSettingsPage> {
+
+  GoogleSignIn googleSignIn = GoogleSignIn(
+      clientId: dotenv.env['GOOGLE_CLIENT_ID']
+  );
+
   Future<void> logOut() async {
     const storage = FlutterSecureStorage();
     await storage.delete(key:'user_data');
+    bool isSignedIn = await googleSignIn.isSignedIn();
+    if(isSignedIn){
+      await googleSignIn.signOut();
+    }
     InAppNotifications.show(
         description:
         'Account logged out successfully',
@@ -195,7 +206,7 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
           const SizedBox(width: 10,),
           Expanded(
             child: TextField(
-              enableSuggestions: false,
+              enableSuggestions: true,
               autocorrect: false,
               onChanged: (a) {
               },

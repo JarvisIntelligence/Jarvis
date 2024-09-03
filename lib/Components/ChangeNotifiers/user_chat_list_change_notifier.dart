@@ -1,22 +1,34 @@
 import 'package:flutter/material.dart';
-import '../Utilities/encrypter.dart';
+import 'package:jarvis_app/Components/Utilities/SqfliteHelperClasses/chat_list_database_helper.dart';
 
 class UserChatListChangeNotifier extends ChangeNotifier {
-  final SecureStorageHelper storage = SecureStorageHelper();
   List<Map<String, dynamic>> _items = [];
+  List<Map<String, dynamic>> _itemsDatabase = [];
+
+  List<Map<String, dynamic>> archivedChatItems = [];
+  List<Map<String, dynamic>> archivedChatItemsDatabase = [];
 
   List<Map<String, dynamic>> get userChatList => _items;
+  List<Map<String, dynamic>> get userArchivedChatsList => archivedChatItems;
+
 
   Future<void> loadInitialData() async {
-    await _loadList();
+    await loadList();
+    await loadArchivedChatList();
   }
 
-  Future<void> _loadList() async {
-    List<Map<String, dynamic>>? storedList = await storage.readListData('userChatList');
-    if (storedList != null) {
-      _items = List<Map<String, dynamic>>.from(storedList);
-      notifyListeners();
-    }
+  Future<void> loadList() async {
+    final List<Map<String, dynamic>> chatList = await ChatListDatabaseHelper().getAllChats();
+    _items = chatList;
+    _itemsDatabase = List.from(chatList); // Sync _itemsDatabase with loaded data
+    notifyListeners();
+  }
+
+  Future<void> loadArchivedChatList() async {
+    final List<Map<String, dynamic>> chatList = await ChatListDatabaseHelper().getAllArchivedChats();
+    archivedChatItems = chatList;
+    archivedChatItemsDatabase = List.from(chatList); // Sync _itemsDatabase with loaded data
+    notifyListeners();
   }
 
   Future<void> addItem({
@@ -30,33 +42,56 @@ class UserChatListChangeNotifier extends ChangeNotifier {
     required String numberOfUsers,
     String? userImage3,
     required String groupImage,
-    required bool notification
+    required bool notification,
+    required bool isPinned,
+    required bool isArchived
   }) async {
     // Check if the item with the given chatId already exists
     int existingIndex = _items.indexWhere((item) => item['id'] == chatId);
+
+    Map<String, dynamic> chatItem = {
+      'notification': notification,
+      'id': chatId,
+      'userImage': userImage,
+      'name': chatName,
+      'lastMessage': lastMessage,
+      'lastMessageTime': lastMessageTime,
+      'isGroup': isGroup,
+      'userImage2': userImage2,
+      'numberOfUsers': numberOfUsers,
+      'userImage3': userImage3,
+      'groupImage': groupImage,
+      'isPinned': isPinned,
+      'isArchived': isArchived
+    };
+
+    Map<String, dynamic> chatItemDatabase = {
+      'notification': notification ? 1 : 0,
+      'id': chatId,
+      'userImage': userImage,
+      'name': chatName,
+      'lastMessage': lastMessage,
+      'lastMessageTime': lastMessageTime,
+      'isGroup': isGroup ? 1 : 0,
+      'userImage2': userImage2,
+      'numberOfUsers': numberOfUsers,
+      'userImage3': userImage3,
+      'groupImage': groupImage,
+      'isPinned': isPinned ? 1 : 0,
+      'isArchived': isArchived ? 1 : 0
+    };
+
     if (existingIndex != -1) {
       // Update existing item
-      _items[existingIndex]['lastMessage'] = lastMessage;
-      _items[existingIndex]['lastMessageTime'] = lastMessageTime;
-      _items[existingIndex]['notification'] = notification; // Set notification to true when updating
+      _items[existingIndex] = chatItem;
+      _itemsDatabase[existingIndex] = chatItemDatabase;
+      await ChatListDatabaseHelper().updateChat(chatItemDatabase);
     } else {
       // Add new item
-      Map<String, dynamic> newChat = {
-        'notification': false,
-        'id': chatId,
-        'userImage': userImage,
-        'name': chatName,
-        'lastMessage': lastMessage,
-        'lastMessageTime': lastMessageTime,
-        'isGroup': isGroup,
-        'userImage2': userImage2,
-        'numberOfUsers': numberOfUsers,
-        'userImage3': userImage3,
-        'groupImage': groupImage,
-      };
-      _items.add(newChat);
+      _items.add(chatItem);
+      _itemsDatabase.add(chatItemDatabase);
+      await ChatListDatabaseHelper().insertChat(chatItemDatabase);
     }
-    await storage.saveListData('userChatList', _items);
     notifyListeners();
   }
 }

@@ -67,7 +67,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                   });
                 }
               },
-              enableSuggestions: false,
+              enableSuggestions: (widget.hintText == 'Add using their username' ) ? true : false,
               autocorrect: false,
               obscureText: isObscured,
               controller: widget.controller,
@@ -140,7 +140,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                   isObscured = !isObscured;
                 });
               },
-              icon: (isObscured) ? Icon(Icons.visibility_off, color: Theme.of(context).colorScheme.scrim,) : Icon(Icons.visibility, color: Theme.of(context).colorScheme.scrim,),
+              icon: (isObscured) ? Icon(Icons.visibility_off, size: 18, color: Theme.of(context).colorScheme.scrim,) : Icon(Icons.visibility, size: 18, color: Theme.of(context).colorScheme.scrim,),
             ),
           )
         )

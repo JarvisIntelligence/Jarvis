@@ -323,35 +323,35 @@ class SendMessage {
     return updatedUserChat;
   }
 
-  List<Map<String, dynamic>> addChatToUserChatList(
-      List<Map<String, dynamic>> userChatList,
-      String chatId, String userImage, String chatName,
-      String lastMessage, String lastMessageTime, bool isGroup,
-      String? userImage2, String numberOfUsers, String? userImage3,
-      String groupImage)
-  {
-    // Create a new message
-    Map<String, dynamic> newChat = {
-      'notification': false,
-      'id': chatId,
-      'userImage': userImage,
-      'name': chatName,
-      'lastMessage': lastMessage,
-      'lastMessageTime': lastMessageTime,
-      'isGroup': false,
-      'userImage2': userImage2,
-      'numberOfUsers': numberOfUsers,
-      'userImage3': userImage3,
-      'groupImage': groupImage
-    };
-
-    // Create a new copy of userChat to avoid direct mutation
-    List<Map<String, dynamic>> updatedUserChat = [...userChatList];
-
-    updatedUserChat.add(newChat);
-
-    return updatedUserChat;
-  }
+  // List<Map<String, dynamic>> addChatToUserChatList(
+  //     List<Map<String, dynamic>> userChatList,
+  //     String chatId, String userImage, String chatName,
+  //     String lastMessage, String lastMessageTime, bool isGroup,
+  //     String? userImage2, String numberOfUsers, String? userImage3,
+  //     String groupImage)
+  // {
+  //   // Create a new message
+  //   Map<String, dynamic> newChat = {
+  //     'notification': false,
+  //     'id': chatId,
+  //     'userImage': userImage,
+  //     'name': chatName,
+  //     'lastMessage': lastMessage,
+  //     'lastMessageTime': lastMessageTime,
+  //     'isGroup': false,
+  //     'userImage2': userImage2,
+  //     'numberOfUsers': numberOfUsers,
+  //     'userImage3': userImage3,
+  //     'groupImage': groupImage
+  //   };
+  //
+  //   // Create a new copy of userChat to avoid direct mutation
+  //   List<Map<String, dynamic>> updatedUserChat = [...userChatList];
+  //
+  //   updatedUserChat.add(newChat);
+  //
+  //   return updatedUserChat;
+  // }
 
 
   String _getMonthName(int month) {

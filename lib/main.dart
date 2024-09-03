@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jarvis_app/Components/SettingsComponents/AboutSettings/about_settings.dart';
@@ -20,11 +22,14 @@ import 'package:jarvis_app/Pages/user_settings_page.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'Components/ChangeNotifiers/theme_provider_notifier.dart';
+import 'Components/Utilities/SqfliteHelperClasses/initialize_database.dart';
 import 'Themes/dark_theme.dart';
 import 'Themes/light_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+  await initializeDatabase();
   final bool isLoggedIn = await checkLoginStatus();
   await _precacheAssets();
   runApp(
@@ -46,7 +51,13 @@ Future<void> _precacheAssets() async {
     precacheSvgPicture('assets/icons/ai_logo.svg'),
     precacheSvgPicture('assets/icons/logo_name.svg'),
     precacheSvgPicture('assets/icons/push_pin_icon.svg'),
+    precacheSvgPicture('assets/icons/push_pin_cancel_icon.svg'),
   ]);
+}
+
+Future<void> initializeDatabase() async {
+  // Ensure that the database is initialized
+  await DatabaseProvider().database;
 }
 
 Future precacheSvgPicture(String svgPath) async {
@@ -122,7 +133,7 @@ class _MyAppState extends State<MyApp> {
           },
           routes: <RouteBase>[
             GoRoute(
-              path: 'chat/:name/:boolValue/:image1Value/:image2Value/:id/:image3Value/:numberOfUsersValue',
+              path: 'chat/:name/:boolValue/:image1Value/:image2Value/:id/:image3Value/:numberOfUsersValue/:isPinned/:isArchived',
               builder: (BuildContext context, GoRouterState state) {
                 final String name = state.pathParameters['name']!;
                 final String image1Value =
@@ -134,6 +145,8 @@ class _MyAppState extends State<MyApp> {
                 final bool isGroup = state.pathParameters['boolValue'] == 'true';
                 final String id = state.pathParameters['id']!;
                 final String numberOfUsersValue = state.pathParameters['numberOfUsersValue']!;
+                final bool isPinned = state.pathParameters['isPinned'] == 'true';
+                final bool isArchived = state.pathParameters['isArchived'] == 'true';
 
                 return Chat(
                   chatName: name,
@@ -143,6 +156,8 @@ class _MyAppState extends State<MyApp> {
                   userImage3: image3Value,
                   id: id,
                   numberOfUsers: numberOfUsersValue,
+                  isPinned: isPinned,
+                  isArchived: isArchived,
                 );
               },
             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jarvis_app/Components/Utilities/SqfliteHelperClasses/chat_list_database_helper.dart';
 import 'package:jarvis_app/Components/home_chat.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -25,7 +26,12 @@ class _HomePageState extends State<HomePage> {
   bool archivedNotification = true;
   String _lastWords = '';
   List<Map<String, dynamic>> filteredList = [];
-  bool showChatSelectedOptions = false;
+  Map<String, bool> isChatSelectedMap = {};
+  late List<Map<String, dynamic>> userChatList = [];
+  int numberOfSelectedChats = 0;
+  Set<String> selectedData = {};
+  bool shouldPinOrUnPinChats = false;
+  int numberOfArchivedChats = 0;
 
   late Future<LottieComposition> _lottieComposition;
 
@@ -37,9 +43,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> init() async {
-    // Initial load from secure storage
+    // Initial load from database
     final listNotifier = Provider.of<UserChatListChangeNotifier>(context, listen: false);
     await listNotifier.loadInitialData();
+    await retrieveNumberOfArchivedChats();
+    setState(() {
+      userChatList = listNotifier.userChatList;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeChatSelectionState(userChatList);
+    });
   }
 
   Future<LottieComposition> _loadLottieComposition() async {
@@ -51,14 +64,24 @@ class _HomePageState extends State<HomePage> {
     return list.where((item) => item['name'].toLowerCase().contains(query.toLowerCase())).toList();
   }
 
-  /// This has to happen only once per app
+  void _initializeChatSelectionState(List<Map<String, dynamic>> userChatList) {
+    for (var chat in userChatList) {
+      String id = chat['id'].toString();
+      isChatSelectedMap[id] = false;
+    }
+  }
+
+  void changeIsChatSelected(String id) {
+    setState(() {
+      isChatSelectedMap[id] = !isChatSelectedMap[id]!;
+    });
+  }
+
   Future<void> _initSpeech() async {
     _speechEnabled = await _speechToText.initialize();
     setState(() {});
   }
 
-  /// This is the callback that the SpeechToText plugin calls when
-  /// the platform returns recognized words.
   void onSpeechResult(SpeechRecognitionResult result) {
     setState(() {
       _lastWords = result.recognizedWords;
@@ -80,11 +103,88 @@ class _HomePageState extends State<HomePage> {
     setState(() {});
   }
 
-  void toggleShowChatSelectedOptions() {
+  void increaseDecreaseNumberOfSelectedChats(String increaseOrDecrease) {
     setState(() {
-      showChatSelectedOptions = !showChatSelectedOptions;
+      if (increaseOrDecrease == 'increase') {
+        numberOfSelectedChats++;
+      } else {
+        numberOfSelectedChats--;
+        if (numberOfSelectedChats == 0){
+          setState(() {
+            selectedData = {};
+          });
+        }
+      }
     });
   }
+
+  Future<void> addChatToDataMap (String id) async {
+    selectedData.add(id);
+    bool allPinned = await ChatListDatabaseHelper().areAllSelectedChatsPinned(selectedData);
+    if (allPinned) {
+      setState(() {
+        shouldPinOrUnPinChats = true;
+      });
+    } else {
+      setState(() {
+        shouldPinOrUnPinChats = false;
+      });
+    }
+  }
+
+  Future<void> removeChatFromDataMap(String id) async {
+    selectedData.remove(id);
+    bool allPinned = await ChatListDatabaseHelper().areAllSelectedChatsPinned(selectedData);
+    if (allPinned) {
+      setState(() {
+        shouldPinOrUnPinChats = true;
+      });
+    } else {
+      setState(() {
+        shouldPinOrUnPinChats = false;
+      });
+    }
+  }
+
+  Future<void> _deselectAllChats() async {
+    final listNotifier = Provider.of<UserChatListChangeNotifier>(context, listen: false);
+    await listNotifier.loadInitialData();
+    retrieveNumberOfArchivedChats();
+    setState(() {
+      userChatList = listNotifier.userChatList;
+      isChatSelectedMap.updateAll((key, value) => false);
+      selectedData = {};
+      numberOfSelectedChats = 0;
+    });
+  }
+
+  Future<void> archiveChats() async {
+    await ChatListDatabaseHelper().archiveChats(selectedData);
+    _deselectAllChats();
+  }
+
+  Future<void> pinChats() async {
+    int numberOfPinnedChats = await ChatListDatabaseHelper().getNumberOfPinnedChats();
+    if(numberOfPinnedChats >= 3) {
+      return;
+    } else {
+      await ChatListDatabaseHelper().pinChats(selectedData);
+      _deselectAllChats();
+    }
+  }
+
+  Future<void> unpinChats() async {
+    await ChatListDatabaseHelper().unpinChats(selectedData);
+    _deselectAllChats();
+  }
+
+  Future<void> retrieveNumberOfArchivedChats() async {
+    int tempNumber = await ChatListDatabaseHelper().getNumberOfArchivedChats();
+    setState(() {
+      numberOfArchivedChats = tempNumber;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -96,20 +196,35 @@ class _HomePageState extends State<HomePage> {
     userChatList.sort((a, b) => b['lastMessageTime'].compareTo(a['lastMessageTime']));
 
     List<Widget> buildChatWidgets(List<Map<String, dynamic>> chatList) {
-      return chatList.map((entry) => HomeChat(
-        notification: entry['notification'],
-        userImage: entry['userImage'],
-        userImage2: entry['userImage2'],
-        userImage3: entry['userImage3'],
-        numberOfUsers: entry['numberOfUsers'],
-        groupImage: entry['groupImage'],
-        name: entry['name'],
-        lastMessage: entry['lastMessage'],
-        lastMessageTime: DateTime.parse(entry['lastMessageTime']),
-        isGroup: entry['isGroup'],
-        id: entry['id'],
-        toggleShowChatSelectedOptions: toggleShowChatSelectedOptions,
-      )).toList();
+      List<Widget> chatWidgets = [];
+
+      for (int index = 0; index < chatList.length; index++) {
+        var entry = chatList[index];
+        chatWidgets.add(
+          HomeChat(
+            notification: entry['notification'],
+            userImage: entry['userImage'],
+            userImage2: entry['userImage2'],
+            userImage3: entry['userImage3'],
+            numberOfUsers: entry['numberOfUsers'],
+            groupImage: entry['groupImage'],
+            name: entry['name'],
+            lastMessage: entry['lastMessage'],
+            lastMessageTime: DateTime.parse(entry['lastMessageTime']),
+            isGroup: entry['isGroup'],
+            id: entry['id'],
+            isPinned: entry['isPinned'],
+            isArchived: entry['isArchived'],
+            increaseDecreaseNumberOfSelectedChats: increaseDecreaseNumberOfSelectedChats,
+            isChatSelected: isChatSelectedMap[entry['id']] ?? false,
+            changeIsChatSelected: () => changeIsChatSelected(entry['id']),
+            addChatToDataMap: () => addChatToDataMap(entry['id']),
+            removeChatFromDataMap: () => removeChatFromDataMap(entry['id'])
+      ),
+        );
+      }
+
+      return chatWidgets;
     }
 
     List<Widget> userChatsWidgets = buildChatWidgets(userChatList);
@@ -157,7 +272,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
 
   Widget chatListHeader() {
     return Container(
@@ -301,7 +415,7 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(width: 10,),
           Expanded(
             child: TextField(
-              enableSuggestions: false,
+              enableSuggestions: true,
               autocorrect: false,
               onChanged: (a) {
                 setState(() {
@@ -339,7 +453,7 @@ class _HomePageState extends State<HomePage> {
     return Expanded(
       child: SingleChildScrollView(
         child: Column(
-          children: (userChatList.isEmpty)
+          children: (numberOfArchivedChats < 1 && userChatList.isEmpty)
               ? [userChatListEmpty()]
               : userChatListNotEmpty(userChatsWidgets, filteredListWidgets),
         ),
@@ -436,52 +550,124 @@ class _HomePageState extends State<HomePage> {
 
   Widget chatSelectedOptions() {
     return Visibility(
-        visible: showChatSelectedOptions,
+        visible: numberOfSelectedChats > 0,
         child: Positioned(
           bottom: 120,
           right: 32,
-            child: Container(
-              width: 40,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondary,
-                borderRadius: BorderRadius.circular(5), // Curved edges
-              ),
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-
-                    },
-                    child: Icon(Icons.archive_outlined, size: 12, color: Theme.of(context).colorScheme.onSecondaryContainer,),
-                  ), // copy
-                  const SizedBox(height: 20,),
-                  GestureDetector(
-                      onTap: (){},
-                      child: Image.asset('assets/icons/push_pin_icon.svg', width: 14, color: Theme.of(context).colorScheme.onSecondaryContainer,)
-                  ), // pin
-                  const SizedBox(height: 20,),
-                  GestureDetector(
-                    onTap: (){
-
-                    },
-                    child: Icon(Icons.delete_outline,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+            child: Column(
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Theme.of(context).colorScheme.tertiaryFixed,
+                      ),
+                      child: Center(
+                        child: Text(
+                          numberOfSelectedChats.toString(),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.scrim,
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
                     ),
-                  ), //delete
-                  const SizedBox(height: 20,),
-                  GestureDetector(
-                    onTap: (){
-
-                    },
-                    child: Icon(Icons.notifications_off_outlined,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    Positioned(
+                        top: -5,
+                        right: -5,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    numberOfSelectedChats = 0;
+                                    _deselectAllChats();
+                                  });
+                                },
+                                icon: Icon(
+                                  Icons.close,
+                                  size: 8,
+                                  color: Theme.of(context).colorScheme.scrim,
+                                ),
+                                padding: EdgeInsets.zero, // Remove default padding
+                                constraints: const BoxConstraints(), // Remove constraints to allow precise positioning
+                              ),
+                            ],
+                          ),
+                        )
                     ),
-                  ), //notifications
-                ],
-              ),
+                  ],
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                Container(
+                  width: 40,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondary,
+                    borderRadius: BorderRadius.circular(5), // Curved edges
+                  ),
+                  child: Column(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          archiveChats();
+                        },
+                        child: Icon(Icons.archive_outlined, size: 12, color: Theme.of(context).colorScheme.onSecondaryContainer,),
+                      ), // copy
+                      const SizedBox(height: 20,),
+                      GestureDetector(
+                          onTap: (){
+                            if(shouldPinOrUnPinChats) {
+                              unpinChats();
+                            } else {
+                              pinChats();
+                            }
+                          },
+                          child: SvgPicture.asset((shouldPinOrUnPinChats) ? 'assets/icons/push_pin_cancel_icon.svg' : 'assets/icons/push_pin_icon.svg', height: 14, colorFilter: ColorFilter.mode(
+                            Theme.of(context).colorScheme.onSecondaryContainer,
+                            BlendMode.srcIn,
+                          ),
+                        )
+                      ), // pin
+                      const SizedBox(height: 20,),
+                      GestureDetector(
+                        onTap: (){
+
+                        },
+                        child: Icon(Icons.delete_outline,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.onSecondaryContainer,
+                        ),
+                      ), //delete
+                      const SizedBox(height: 20,),
+                      GestureDetector(
+                        onTap: (){
+
+                        },
+                        child: Icon(Icons.notifications_off_outlined,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.onSecondaryContainer,
+                        ),
+                      ), //notifications
+                    ],
+                  ),
+                )
+              ],
             )
         )
     );
@@ -489,32 +675,35 @@ class _HomePageState extends State<HomePage> {
 
   Widget archivedChat() {
     return Visibility(
-      visible: true,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 5),
-        child: GestureDetector(
-          onTap: () {
-            context.push('/homepage/archivedchats');
-          },
-          child: Container(
-            padding: const EdgeInsets.only(bottom: 15, top: 15, left: 15),
-            decoration: BoxDecoration(
-                color: Colors.transparent,
-                border: Border(
-                    bottom: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 1
-                    )
-                )
-            ),
-            child: Row(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
+      visible: numberOfArchivedChats > 0,
+      child: GestureDetector(
+        onTap: () {
+          context.push('/homepage/archivedchats');
+        },
+        child: Container(
+          padding: const EdgeInsets.only(bottom: 15, top: 15, left: 15),
+          decoration: BoxDecoration(
+              color: Colors.transparent,
+              border: Border(
+                  bottom: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 1
+                  )
+              )
+          ),
+          child: Row(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Visibility(
+                        visible: false,
+                        maintainState: true,
+                        maintainSize: true,
+                        maintainAnimation: true,
+                        child: Container(
                           width: 11, // Adjust as needed
                           height: 11, // Adjust as needed
                           decoration: BoxDecoration(
@@ -522,22 +711,22 @@ class _HomePageState extends State<HomePage> {
                             color: (archivedNotification) ? Theme.of(context).colorScheme.tertiary : Theme.of(context).colorScheme.surface, // Change color as needed
                           ),
                         ),
-                        const SizedBox(width: 10,),
-                        const SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: Center(
-                            child: Icon(Icons.archive_outlined, size: 30,),
-                          ),
+                      ),
+                      const SizedBox(width: 10,),
+                      const SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Center(
+                          child: Icon(Icons.archive_outlined, size: 30,),
                         ),
-                        const SizedBox(width: 15,),
-                        Text('Archived Chats', style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                      ),
+                      const SizedBox(width: 15,),
+                      Text('Archived Chats', style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
+                    ],
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       )

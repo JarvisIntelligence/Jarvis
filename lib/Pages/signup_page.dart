@@ -1,15 +1,20 @@
 import 'dart:convert';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
-import 'package:jarvis_app/Components/Utilities/register_login_user.dart';
+import 'package:jarvis_app/Components/Utilities/BackendUtilities/friends.dart';
+import 'package:jarvis_app/Components/Utilities/BackendUtilities/register_login_user.dart';
+import 'package:jarvis_app/Components/screen_loader.dart';
 import 'package:jarvis_app/Components/textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:jarvis_app/Components/Utilities/encrypter.dart';
 import 'package:lottie/lottie.dart';
+
+import '../Components/Utilities/BackendUtilities/profile_user.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -29,228 +34,12 @@ class _SignupPageState extends State<SignupPage> {
   final _controller = PageController(
       initialPage: 0
   );
-  // List<Map<String, dynamic>> userChatList = [
-  //   {
-  //     'notification': true,
-  //     'id': '1',
-  //     'userImage': 'https://randomuser.me/api/portraits/men/32.jpg',
-  //     'name': 'John Doe',
-  //     'lastMessage': "I don't know why people are so anti pineapple pizza. I kind of like it.",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
-  //     'isGroup': false,
-  //     'userImage2': '',
-  //     'numberOfUsers': "1",
-  //     'userImage3': '',
-  //     'groupImage': ''
-  //   },
-  //   {
-  //     'notification': false,
-  //     'id': '2',
-  //     'userImage': 'https://randomuser.me/api/portraits/women/44.jpg',
-  //     'name': 'Emily Smith',
-  //     'lastMessage': "There's no way you'll be able to jump your motorcycle over that bus.",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
-  //     'isGroup': false,
-  //     'userImage2': '',
-  //     'numberOfUsers': "1",
-  //     'userImage3': '',
-  //     'groupImage': ''
-  //   },
-  //   {
-  //     'notification': false,
-  //     'id': '3',
-  //     'userImage': 'https://randomuser.me/api/portraits/men/65.jpg',
-  //     'name': 'Alex & Sophia',
-  //     'lastMessage': "I don't know why people are so anti pineapple pizza. I kind of like it.",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
-  //     'isGroup': true,
-  //     'userImage2': 'https://randomuser.me/api/portraits/women/68.jpg',
-  //     'numberOfUsers': "2",
-  //     'userImage3': '',
-  //     'groupImage': ''
-  //   },
-  //   {
-  //     'notification': true,
-  //     'id': '4',
-  //     'userImage': 'https://randomuser.me/api/portraits/men/12.jpg',
-  //     'name': 'Michael Johnson',
-  //     'lastMessage': "Tabs make way more sense than spaces. Convince me I'm wrong. LOL.",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
-  //     'isGroup': false,
-  //     'userImage2': '',
-  //     'numberOfUsers': "1",
-  //     'userImage3': '',
-  //     'groupImage': ''
-  //   },
-  //   {
-  //     'notification': false,
-  //     'id': '5',
-  //     'userImage': 'https://randomuser.me/api/portraits/women/15.jpg',
-  //     'name': 'Jennifer Lopez',
-  //     'lastMessage': "I don't know why people are so anti pineapple pizza. I kind of like it.",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
-  //     'isGroup': false,
-  //     'userImage2': '',
-  //     'numberOfUsers': "1",
-  //     'userImage3': '',
-  //     'groupImage': ''
-  //   },
-  //   {
-  //     'notification': false,
-  //     'id': '6',
-  //     'userImage': 'https://randomuser.me/api/portraits/women/50.jpg',
-  //     'name': 'Jessica Ramirez',
-  //     'lastMessage': "(Sad fact: you cannot search for a gif of the word “gif”, just gives you gifs.)",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T07:24:00'),
-  //     'isGroup': false,
-  //     'userImage2': '',
-  //     'numberOfUsers': "1",
-  //     'userImage3': '',
-  //     'groupImage': ''
-  //   },
-  //   {
-  //     'notification': false,
-  //     'id': '7',
-  //     'userImage': 'https://randomuser.me/api/portraits/women/23.jpg',
-  //     'name': 'Barbara Martinez',
-  //     'lastMessage': "I don't know why people are so anti pineapple pizza. I kind of like it.",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
-  //     'isGroup': false,
-  //     'userImage2': '',
-  //     'numberOfUsers': "1",
-  //     'userImage3': '',
-  //     'groupImage': ''
-  //   },
-  //   {
-  //     'notification': true,
-  //     'id': '8',
-  //     'userImage': 'https://randomuser.me/api/portraits/men/18.jpg',
-  //     'name': 'David & Angela',
-  //     'lastMessage': "There's no way you'll be able to jump your motorcycle over that bus.",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T09:24:00'),
-  //     'isGroup': true,
-  //     'userImage2': 'https://randomuser.me/api/portraits/women/19.jpg',
-  //     'numberOfUsers': "2",
-  //     'userImage3': '',
-  //     'groupImage': 'https://picsum.photos/150'
-  //   },
-  //   {
-  //     'notification': true,
-  //     'id': '9',
-  //     'userImage': 'https://randomuser.me/api/portraits/men/24.jpg',
-  //     'name': 'Paul & Susan',
-  //     'lastMessage': "There's no way you'll be able to jump your motorcycle over that bus.",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T22:24:00'),
-  //     'isGroup': true,
-  //     'userImage2': 'https://randomuser.me/api/portraits/women/42.jpg',
-  //     'numberOfUsers': "2",
-  //     'userImage3': '',
-  //     'groupImage': 'https://picsum.photos/150'
-  //   },
-  //   {
-  //     'notification': false,
-  //     'id': '10',
-  //     'userImage': 'https://randomuser.me/api/portraits/men/10.jpg',
-  //     'name': 'Kevin Brown',
-  //     'lastMessage': "Did you see the game last night? It was amazing!",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T21:00:00'),
-  //     'isGroup': false,
-  //     'userImage2': '',
-  //     'numberOfUsers': "1",
-  //     'userImage3': '',
-  //     'groupImage': ''
-  //   },
-  //   {
-  //     'notification': true,
-  //     'id': '11',
-  //     'userImage': 'https://randomuser.me/api/portraits/women/55.jpg',
-  //     'name': 'Laura Wilson',
-  //     'lastMessage': "Let's catch up soon! It's been too long.",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T20:30:00'),
-  //     'isGroup': false,
-  //     'userImage2': 'https://randomuser.me/api/portraits/women/55.jpg',
-  //     'numberOfUsers': "1",
-  //     'userImage3': '',
-  //     'groupImage': ''
-  //   },
-  //   {
-  //     'notification': true,
-  //     'id': '12',
-  //     'userImage': 'https://randomuser.me/api/portraits/men/60.jpg',
-  //     'name': 'Chris & Sam',
-  //     'lastMessage': "Can we meet up for the project discussion?",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T18:45:00'),
-  //     'isGroup': true,
-  //     'userImage2': 'https://randomuser.me/api/portraits/men/62.jpg',
-  //     'numberOfUsers': "2",
-  //     'userImage3': '',
-  //     'groupImage': ''
-  //   },
-  //   {
-  //     'notification': false,
-  //     'id': '13',
-  //     'userImage': 'https://randomuser.me/api/portraits/women/22.jpg',
-  //     'name': 'Natalie Adams',
-  //     'lastMessage': "I can't believe it's already summer!",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T15:24:00'),
-  //     'isGroup': false,
-  //     'userImage2': '',
-  //     'numberOfUsers': "1",
-  //     'userImage3': '',
-  //     'groupImage': ''
-  //   },
-  //   {
-  //     'notification': true,
-  //     'id': '14',
-  //     'userImage': 'https://randomuser.me/api/portraits/men/40.jpg',
-  //     'name': 'Tom & Jerry',
-  //     'lastMessage': "We should plan a road trip next month.",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T14:24:00'),
-  //     'isGroup': true,
-  //     'userImage2': 'https://randomuser.me/api/portraits/men/42.jpg',
-  //     'numberOfUsers': "2",
-  //     'userImage3': '',
-  //     'groupImage': 'https://picsum.photos/150'
-  //   },
-  //   {
-  //     'notification': false,
-  //     'id': '15',
-  //     'userImage': 'https://randomuser.me/api/portraits/women/35.jpg',
-  //     'name': 'Sophia Thompson',
-  //     'lastMessage': "I'm baking cookies today. Want some?",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T13:24:00'),
-  //     'isGroup': false,
-  //     'userImage2': '',
-  //     'numberOfUsers': "1",
-  //     'userImage3': '',
-  //     'groupImage': ''
-  //   },
-  //   {
-  //     'notification': true,
-  //     'id': '16',
-  //     'userImage': 'https://randomuser.me/api/portraits/men/29.jpg',
-  //     'name': 'James & Michael',
-  //     'lastMessage': "Meet me at the park tomorrow.",
-  //     'lastMessageTime': DateTime.parse('2023-05-24T12:24:00'),
-  //     'isGroup': true,
-  //     'userImage2': 'https://randomuser.me/api/portraits/men/31.jpg',
-  //     'numberOfUsers': "3",
-  //     'userImage3': 'https://randomuser.me/api/portraits/lego/1.jpg',
-  //     'groupImage': ''
-  //   },
-  // ];
 
-  final SecureStorageHelper _secureStorageHelper = SecureStorageHelper();
   final storage = const FlutterSecureStorage();
   bool progressVisible = false;
 
   final Map<String, dynamic> userRegisterJsonData = {};
   final Map<String, dynamic> userRegisteredData = {};
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  // }
 
   @override
   void dispose() {
@@ -292,7 +81,7 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  void validateUserNameAndFullName() {
+  Future<void> validateUserNameAndFullName() async {
     if(_usernameController.text.isEmpty || _fullNameController.text.isEmpty){
       InAppNotifications.show(
           description:
@@ -308,6 +97,15 @@ class _SignupPageState extends State<SignupPage> {
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut
     );
+  }
+
+  Future<String> retrieveJWT() async {
+    String? jsonString = await storage.read(key: 'user_data');
+    if (jsonString != null) {
+      Map<String, dynamic> userLoggedInData = jsonDecode(jsonString);
+      return userLoggedInData['jwt_token'];
+    }
+    return '';
   }
 
   Future<void> validatePassword() async {
@@ -347,12 +145,15 @@ class _SignupPageState extends State<SignupPage> {
     return isNetworkOn;
   }
 
+  GoogleSignIn googleSignIn = GoogleSignIn(
+    clientId: dotenv.env['GOOGLE_CLIENT_ID']
+  );
+
   Future<void> signUp() async {
     updateProgressVisible();
-    Future<bool> isRegisterSuccessful= RegisterLoginUser().registerUser(userRegisterJsonData);
-    if(await isRegisterSuccessful){
-      await _secureStorageHelper.saveListData('userChatList', []);
-      await storeUserDetailsSecureStorage();
+    Map<String, dynamic> userDetails = await RegisterLoginUser().registerAndCreateProfile(userRegisterJsonData);
+    if(userDetails.isNotEmpty){
+      await storeUserDetailsSecureStorage(userDetails['accessToken'], userDetails['userID']);
       updateProgressVisible();
       if (mounted) {
         context.go('/homepage');
@@ -362,13 +163,41 @@ class _SignupPageState extends State<SignupPage> {
     }
   }
 
-  Future<void> storeUserDetailsSecureStorage() async {
+  Future<void> storeUserDetailsSecureStorage(String token, String userID) async {
     userRegisteredData['isLogged'] = true;
     userRegisteredData['userName'] = (_usernameController.text).toLowerCase();
-    userRegisteredData['fullName'] = _fullNameController.text;
+    userRegisteredData['jwt_token']= token;
+    userRegisteredData['userID'] = userID;
 
     String jsonString = jsonEncode(userRegisteredData);
     await storage.write(key: 'user_data', value: jsonString);
+  }
+
+  Future<Map<String, dynamic>?> handleGoogleSignIn() async {
+    try {
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser != null) {
+        // Get the Google authentication details
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+        // Retrieve the idToken
+        String? idToken = googleAuth.idToken;
+
+        if (idToken != null) {
+          Map<String, dynamic> userDetails = {
+            'idToken': idToken,
+            'photoUrl': googleUser.photoUrl
+          };
+          return userDetails;
+        }
+      }
+    } catch (error) {
+      InAppNotifications.show(
+          description: "Error during Google sign-in: $error",
+          onTap: (){}
+      );
+    }
+    return {};
   }
 
   @override
@@ -429,24 +258,10 @@ class _SignupPageState extends State<SignupPage> {
                     ]
                 ),
               ),
-              loadingAnimation()
+              LoadingAnimation(progressVisible: progressVisible,)
             ],
           )
         )
-    );
-  }
-
-  Widget loadingAnimation() {
-    return Visibility(
-      visible: progressVisible,
-      child: Container(
-        color: Colors.black87,
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
-        child: Center(
-          child: Lottie.asset('assets/lottie_animations/loading_animation.json', width: 80),
-        ),
-      )
     );
   }
 
@@ -513,7 +328,9 @@ class _SignupPageState extends State<SignupPage> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-                onPressed: (){},
+                onPressed: () async {
+                  await RegisterLoginUser().signInGoogleAuth(updateProgressVisible, handleGoogleSignIn, storeUserDetailsSecureStorage, context);
+                },
                 style: ButtonStyle(
                   shape: WidgetStateProperty.all<OutlinedBorder>(
                     RoundedRectangleBorder(
@@ -529,7 +346,6 @@ class _SignupPageState extends State<SignupPage> {
                     SvgPicture.asset(
                       'assets/icons/google.svg',
                     ),
-
                     const SizedBox(width: 8.32,),
                     Text("Google", style: TextStyle(color: Theme.of(context).colorScheme.surface, fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w500),),
                   ],

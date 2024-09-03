@@ -19,7 +19,8 @@ final ThemeData darkTheme = ThemeData(
     tertiaryFixedDim: const Color(0x66FFFFFF),
     secondaryFixed: const Color(0xFFFFFFFF),
     secondaryFixedDim: const Color(0xFF9990FF),
-    primaryFixed: const Color(0xFF5538EE)
+    primaryFixed: const Color(0xFF5538EE),
+    surfaceContainer: const Color(0xFF40454A)
   ),
   primaryColor: Colors.white38,
 );

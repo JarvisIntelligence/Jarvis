@@ -1,18 +1,19 @@
 import 'dart:convert';
-
 import 'package:flutter/gestures.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:jarvis_app/Components/Utilities/BackendUtilities/friends.dart';
 import 'package:jarvis_app/Components/textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:lottie/lottie.dart';
-
-import '../Components/Utilities/encrypter.dart';
-import '../Components/Utilities/register_login_user.dart';
-
+import 'package:crypto/crypto.dart';
+import '../Components/Utilities/BackendUtilities/profile_user.dart';
+import '../Components/Utilities/BackendUtilities/register_login_user.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import '../Components/screen_loader.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -26,7 +27,6 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
 
-  final SecureStorageHelper _secureStorageHelper = SecureStorageHelper();
   final storage = const FlutterSecureStorage();
   bool progressVisible = false;
 
@@ -45,15 +45,22 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  GoogleSignIn googleSignIn = GoogleSignIn(
+    clientId: dotenv.env['GOOGLE_CLIENT_ID']
+  );
+
+
   void updateProgressVisible() {
     setState(() {
       progressVisible = !progressVisible;
     });
   }
 
-  Future<void> storeUserDetailsSecureStorage() async {
+  Future<void> storeUserDetailsSecureStorage(String token, String userID) async {
     userLoggedInData['isLogged'] = true;
     userLoggedInData['userName'] = (_usernameController.text).toLowerCase();
+    userLoggedInData['jwt_token'] = token;
+    userLoggedInData['userID'] = userID;
 
     String jsonString = jsonEncode(userLoggedInData);
     await storage.write(key: 'user_data', value: jsonString);
@@ -63,16 +70,15 @@ class _LoginPageState extends State<LoginPage> {
     updateProgressVisible();
     userLogInJsonData['username'] = (_usernameController.text).toLowerCase();
     userLogInJsonData['password'] = _passwordController.text;
-    Future<bool> isRegisterSuccessful= RegisterLoginUser().logInUser(userLogInJsonData);
-    if(await isRegisterSuccessful){
-      await _secureStorageHelper.saveListData('userChatList', []);
-      await storeUserDetailsSecureStorage();
-      updateProgressVisible();
-      if (mounted) {
-        context.go('/homepage');
-      }
-    } else{
-      updateProgressVisible();
+
+    Map<String, dynamic>? userDetails = await RegisterLoginUser().logInUser(userLogInJsonData, false);
+    String accessToken = userDetails?['accessToken'];
+    String userID = userDetails?['userID'];
+
+    await storeUserDetailsSecureStorage(accessToken, userID);
+    updateProgressVisible();
+    if (mounted) {
+      context.go('/homepage');
     }
   }
 
@@ -101,6 +107,34 @@ class _LoginPageState extends State<LoginPage> {
         login();
       }
     }
+  }
+
+  Future<Map<String, dynamic>?> handleGoogleSignIn() async {
+    try {
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser != null) {
+        // Get the Google authentication details
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+        // Retrieve the idToken
+        String? idToken = googleAuth.idToken;
+
+        if (idToken != null) {
+          Map<String, dynamic> userDetails = {
+            'idToken': idToken,
+            'photoUrl': googleUser.photoUrl,
+            'email': googleUser.email
+          };
+          return userDetails;
+        }
+      }
+    } catch (error) {
+      InAppNotifications.show(
+          description: "Error during Google sign-in: $error",
+          onTap: (){}
+      );
+    }
+    return {};
   }
 
   @override
@@ -143,7 +177,7 @@ class _LoginPageState extends State<LoginPage> {
                   ]
               ),
             ),
-            loadingAnimation()
+            LoadingAnimation(progressVisible: progressVisible,)
           ],
         )
     );
@@ -235,7 +269,9 @@ class _LoginPageState extends State<LoginPage> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-                onPressed: (){},
+                onPressed: () async {
+                  await RegisterLoginUser().signInGoogleAuth(updateProgressVisible, handleGoogleSignIn, storeUserDetailsSecureStorage, context);
+                },
                 style: ButtonStyle(
                   shape: WidgetStateProperty.all<OutlinedBorder>(
                     RoundedRectangleBorder(
@@ -391,20 +427,6 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget loadingAnimation() {
-    return Visibility(
-        visible: progressVisible,
-        child: Container(
-          color: Colors.black87,
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          child: Center(
-            child: Lottie.asset('assets/lottie_animations/loading_animation.json', width: 80),
-          ),
-        )
     );
   }
 }

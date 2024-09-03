@@ -9,7 +9,7 @@ class RecentListChat extends StatefulWidget {
     required this.groupImage, required this.isAddingGroup,
     required this.addingUsersToNewGroup(String name, String profileImage, int userIndex),
     required this.isUserSelected, required this.changeIsUserSelected,
-    required this.userIndex, required this.userBio
+    required this.userIndex, required this.userBio, required this.isPinned, required this.isArchived
   });
 
   final bool isGroup;
@@ -26,6 +26,8 @@ class RecentListChat extends StatefulWidget {
   final Function() changeIsUserSelected;
   final bool isUserSelected;
   final int userIndex;
+  final bool isPinned;
+  final bool isArchived;
 
   @override
   State<RecentListChat> createState() => _RecentListChatState();
@@ -61,7 +63,7 @@ class _RecentListChatState extends State<RecentListChat> {
       path = '$path/_';
     }
     // Append the number of users at the end of the path
-    path = '$path/${widget.numberOfUsers}';
+    path = '$path/${widget.numberOfUsers}/${widget.isPinned}/${widget.isArchived}';
     context.go(path);
   }
 

@@ -31,7 +31,7 @@ class Chat extends StatefulWidget {
   const Chat({super.key, required this.chatName,
     required this.isGroup,  required this.userImage,
     this.userImage2, required this.id,
-    this.userImage3, required this.numberOfUsers});
+    this.userImage3, required this.numberOfUsers, required this.isPinned, required this.isArchived});
 
   final String chatName;
   final bool isGroup;
@@ -40,6 +40,8 @@ class Chat extends StatefulWidget {
   final String id;
   final String numberOfUsers;
   final String? userImage3;
+  final bool isPinned;
+  final bool isArchived;
 
   @override
   State<Chat> createState() => _ChatState();
@@ -262,9 +264,6 @@ class _ChatState extends State<Chat> {
         for(int i = 0; i < messages.length; i++) {
           isChatSelectedMap[index++] = false;
         }
-        // for (var message in messages) {
-        //   isChatSelectedMap[index++] = false;
-        // }
       });
     }
   }
@@ -481,19 +480,13 @@ class _ChatState extends State<Chat> {
         lastMessage: lastMessage, lastMessageTime: lastMessageTime, isGroup: widget.isGroup,
         userImage2: widget.userImage2, numberOfUsers: widget.numberOfUsers,
         userImage3: widget.userImage3, groupImage: widget.userImage,
-        notification: false
+        notification: false, isPinned: widget.isPinned, isArchived: widget.isArchived
     );
   }
 
   Future<void> checkIfChatIsInChatList() async {
     List<Map<String, dynamic>>? userChatList = await _secureStorageHelper.readListData('userChatList');
     saveUpdatedUserChatList(userChatList);
-    // if(userChatList == null) {
-    //   print('')
-    //   saveUpdatedUserChatList(userChatList);
-    // } else {
-    //   saveUpdatedUserChatList(userChatList);
-    // }
   }
 
   static Duration parseDuration(String duration) {
@@ -561,7 +554,7 @@ class _ChatState extends State<Chat> {
   }
 
   bool containsURL(String string) {
-    final urlPattern = r'(https?:\/\/[^\s]+)';
+    const urlPattern = r'(https?:\/\/[^\s]+)';
     final result = RegExp(urlPattern, caseSensitive: false).hasMatch(string);
     return result;
   }
@@ -1093,8 +1086,8 @@ class _ChatState extends State<Chat> {
                           ),
                           Expanded(
                             child: TextField(
-                              enableSuggestions: false,
-                              autocorrect: false,
+                              enableSuggestions: true,
+                              autocorrect: true,
                               maxLines: null,
                               keyboardType: TextInputType.multiline,
                               textInputAction: TextInputAction.newline,
@@ -1286,8 +1279,7 @@ class _ChatState extends State<Chat> {
 
   Widget messagesSelectedDisplay() {
     return Visibility(
-      // visible: isLongPressed,
-      visible: numberOfSelectedBubbles > 0,
+      visible: numberOfSelectedBubbles > 1,
       child: Stack(
         children: [
           Positioned(
@@ -1322,17 +1314,26 @@ class _ChatState extends State<Chat> {
                   shape: BoxShape.circle,
                   color: Theme.of(context).colorScheme.secondary,
                 ),
-                child: Center(
-                  child: IconButton(
-                    onPressed: () {
-                      setState(() {
-                        isLongPressed = !isLongPressed;
-                        numberOfSelectedBubbles = 0;
-                        _deselectAllChats();
-                      });
-                    },
-                    icon: Icon(Icons.close, size: 5, color: Theme.of(context).colorScheme.scrim,),
-                  ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          isLongPressed = !isLongPressed;
+                          numberOfSelectedBubbles = 0;
+                          _deselectAllChats();
+                        });
+                      },
+                      icon: Icon(
+                        Icons.close,
+                        size: 8,
+                        color: Theme.of(context).colorScheme.scrim,
+                      ),
+                      padding: EdgeInsets.zero, // Remove default padding
+                      constraints: const BoxConstraints(), // Remove constraints to allow precise positioning
+                    ),
+                  ],
                 ),
               )
           ),
@@ -1380,7 +1381,10 @@ class _ChatState extends State<Chat> {
                   const SizedBox(height: 20,),
                   GestureDetector(
                       onTap: (){},
-                      child: Image.asset('assets/icons/push_pin_icon.svg', width: 14, color: Theme.of(context).colorScheme.onSecondaryContainer,)
+                      child: SvgPicture.asset('assets/icons/push_pin_icon.svg', height: 14, colorFilter: ColorFilter.mode(
+                        Theme.of(context).colorScheme.onSecondaryContainer,
+                        BlendMode.srcIn,
+                      ),)
                   ), // pin
                   const SizedBox(height: 20,),
                   GestureDetector(

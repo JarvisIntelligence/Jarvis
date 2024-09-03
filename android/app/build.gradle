@@ -67,5 +67,6 @@ flutter {
 dependencies {
     implementation 'androidx.core:core-splashscreen:1.0.1'
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation 'com.google.android.gms:play-services-auth:21.2.0'
 }
 
