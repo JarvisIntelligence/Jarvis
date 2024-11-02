@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jarvis_app/Components/ChangeNotifiers/new_message_notifier.dart';
 import 'package:jarvis_app/Components/SettingsComponents/AboutSettings/about_settings.dart';
 import 'package:jarvis_app/Components/SettingsComponents/AppLanguageSettings/app_language_settings.dart';
 import 'package:jarvis_app/Components/SettingsComponents/ChatSettings/chat_settings.dart';
@@ -22,21 +22,22 @@ import 'package:jarvis_app/Pages/user_settings_page.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'Components/ChangeNotifiers/theme_provider_notifier.dart';
-import 'Components/Utilities/SqfliteHelperClasses/initialize_database.dart';
 import 'Themes/dark_theme.dart';
 import 'Themes/light_theme.dart';
+
+late GoRouter router;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  await initializeDatabase();
   final bool isLoggedIn = await checkLoginStatus();
   await _precacheAssets();
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => UserChatListChangeNotifier()),
-        ChangeNotifierProvider(create: (context) => ThemeProvider()), // Replace with your other ChangeNotifier
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => NewMessageNotifier())
       ],
       child: MyApp(isLoggedIn: isLoggedIn),
     ),
@@ -53,11 +54,6 @@ Future<void> _precacheAssets() async {
     precacheSvgPicture('assets/icons/push_pin_icon.svg'),
     precacheSvgPicture('assets/icons/push_pin_cancel_icon.svg'),
   ]);
-}
-
-Future<void> initializeDatabase() async {
-  // Ensure that the database is initialized
-  await DatabaseProvider().database;
 }
 
 Future precacheSvgPicture(String svgPath) async {
@@ -84,6 +80,7 @@ Future<bool> checkLoginStatus() async {
 
   String? jsonString = await storage.read(key: 'user_data');
   if (jsonString != null) {
+
     return jsonDecode(jsonString)['isLogged'];
   } else {
     return false;
@@ -92,8 +89,8 @@ Future<bool> checkLoginStatus() async {
 
 _resetStyle() {
   InAppNotifications.instance
-    ..titleFontSize = 14.0
-    ..descriptionFontSize = 14.0
+    ..titleFontSize = 10.0
+    ..descriptionFontSize = 10.0
     ..textColor = Colors.white
     ..backgroundColor = const Color(0xFF5538EE)
     ..shadow = true
@@ -108,6 +105,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _resetStyle();
     _router = _configureRouter();
+    router = _router;
   }
 
   GoRouter _configureRouter() {
@@ -133,9 +131,10 @@ class _MyAppState extends State<MyApp> {
           },
           routes: <RouteBase>[
             GoRoute(
-              path: 'chat/:name/:boolValue/:image1Value/:image2Value/:id/:image3Value/:numberOfUsersValue/:isPinned/:isArchived',
+              path: 'chat/:name/:userName/:boolValue/:image1Value/:image2Value/:conversationId/:image3Value/:numberOfUsersValue/:isPinned/:isArchived/:participantsId',
               builder: (BuildContext context, GoRouterState state) {
                 final String name = state.pathParameters['name']!;
+                final String userName = state.pathParameters['userName']!;
                 final String image1Value =
                 Uri.decodeComponent(state.pathParameters['image1Value']!);
                 final String image2Value =
@@ -143,21 +142,24 @@ class _MyAppState extends State<MyApp> {
                 final String image3Value =
                 Uri.decodeComponent(state.pathParameters['image3Value']!);
                 final bool isGroup = state.pathParameters['boolValue'] == 'true';
-                final String id = state.pathParameters['id']!;
+                final String conversationId = state.pathParameters['conversationId']!;
                 final String numberOfUsersValue = state.pathParameters['numberOfUsersValue']!;
                 final bool isPinned = state.pathParameters['isPinned'] == 'true';
                 final bool isArchived = state.pathParameters['isArchived'] == 'true';
+                final String participantsId = state.pathParameters['participantsId']!;
 
                 return Chat(
                   chatName: name,
+                  userName: userName,
                   isGroup: isGroup,
                   userImage: image1Value,
                   userImage2: image2Value,
                   userImage3: image3Value,
-                  id: id,
+                  conversationId: conversationId,
                   numberOfUsers: numberOfUsersValue,
                   isPinned: isPinned,
                   isArchived: isArchived,
+                  participantsId: participantsId
                 );
               },
             ),

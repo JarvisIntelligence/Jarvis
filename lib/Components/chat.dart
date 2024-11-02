@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-// import 'dart:io';
+import 'dart:io';
 import 'package:clipboard/clipboard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +10,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:jarvis_app/Components/AIChats/ai_chat_history.dart';
+import 'package:jarvis_app/Components/Utilities/BackendUtilities/send_receive_messages.dart';
+import 'package:jarvis_app/Components/Utilities/SqfliteHelperClasses/chat_list_database_helper.dart';
+import 'package:jarvis_app/Components/Utilities/SqfliteHelperClasses/contact_list_database_helper.dart';
 import 'package:jarvis_app/Components/Utilities/camera.dart';
 import 'package:jarvis_app/Components/Utilities/record_audio.dart';
 import 'package:jarvis_app/Components/cache_image.dart';
@@ -18,30 +21,35 @@ import 'package:jarvis_app/Components/Utilities/encrypter.dart';
 import 'package:jarvis_app/Components/Utilities/send_message.dart';
 import 'package:jarvis_app/Components/ChangeNotifiers/user_chat_list_change_notifier.dart';
 import 'package:lottie/lottie.dart';
-// import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/foundation.dart' as foundation;
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:uuid/uuid.dart';
+import 'ChangeNotifiers/new_message_notifier.dart';
+import 'Utilities/extras.dart';
 import 'Utilities/file_picker.dart';
 
 class Chat extends StatefulWidget {
   const Chat({super.key, required this.chatName,
+    required this.userName,
     required this.isGroup,  required this.userImage,
-    this.userImage2, required this.id,
-    this.userImage3, required this.numberOfUsers, required this.isPinned, required this.isArchived});
+    this.userImage2, required this.conversationId,
+    this.userImage3, required this.numberOfUsers, required this.isPinned, required this.isArchived, required this.participantsId});
 
   final String chatName;
+  final String userName;
   final bool isGroup;
   final String userImage;
   final String? userImage2;
-  final String id;
+  final String conversationId;
   final String numberOfUsers;
   final String? userImage3;
   final bool isPinned;
   final bool isArchived;
+  final String participantsId;
 
   @override
   State<Chat> createState() => _ChatState();
@@ -79,6 +87,9 @@ class _ChatState extends State<Chat> {
   String _fileAudioName = '';
   Duration currentRecordingDuration = Duration.zero;
   Duration currentPosition = Duration.zero;
+  final Uuid uuid = const Uuid();
+
+  final storage = const FlutterSecureStorage();
 
   late StreamSubscription<void> _playerFinishedSubscription;
   late StreamSubscription<Duration> _positionSubscription;
@@ -92,16 +103,35 @@ class _ChatState extends State<Chat> {
   Duration currentVoiceNotePosition = Duration.zero;
   bool isVoiceNotePlaying = false;
   bool isVoiceNotePause = false;
+  String currentConversationId = '';
+
+  NewMessageNotifier? _newMessageNotifier;
+  late NewMessageNotifier newMessageNotifier;
 
   @override
   void initState() {
     super.initState();
     init();
+    newMessageNotifier = Provider.of<NewMessageNotifier>(context, listen: false);
+    _newMessageNotifier?.addListener(() {fetchUserChatData();});
     voiceNoteAudioInit();
+    scrollController.addListener(_preloadNextBatch);
+  }
+
+  @override
+  void didChangeDependencies() {
+    newMessageNotifier = Provider.of<NewMessageNotifier>(context, listen: false);
+    super.didChangeDependencies();
   }
 
   @override
   void dispose() {
+    newMessageNotifier.deleteMessageById(
+        conversationId: widget.conversationId,
+        tempUserChat: userChat,
+        messageId: "notification_unread_message"
+    );
+    _newMessageNotifier?.removeListener(fetchUserChatData);
     scrollController.removeListener(scrollListener);
     focusNode.removeListener(focusNodeListener);
     scrollController.dispose();
@@ -112,16 +142,23 @@ class _ChatState extends State<Chat> {
   }
 
   Future<void> init() async {
-    // retrieve user's chat list from secure storage
-    List<Map<String, dynamic>>? tempUserChat = await _secureStorageHelper.readListData(widget.id);
-    if(tempUserChat != null){
+    Provider.of<UserChatListChangeNotifier>(context, listen: false).disableNotification(widget.conversationId);
+    await fetchUserChatData();
+    scrollController.addListener(scrollListener);
+    focusNode.addListener(focusNodeListener);
+    _initializeChatSelectionState();
+  }
+
+  Future<void> fetchUserChatData() async {
+    if(mounted){
+      Provider.of<UserChatListChangeNotifier>(context, listen: false).disableNotification(widget.conversationId);
+    }
+    List<Map<String, dynamic>>? tempUserChat = await _secureStorageHelper.readListData(widget.conversationId);
+    if(tempUserChat != null && mounted){
       setState(() {
         userChat = tempUserChat;
       });
     }
-    scrollController.addListener(scrollListener);
-    focusNode.addListener(focusNodeListener);
-    _initializeChatSelectionState();
   }
 
   Future<void> audioInit() async {
@@ -301,7 +338,7 @@ class _ChatState extends State<Chat> {
     audioPlayer.play(AssetSource('sound_effects/chat_received_sent.mp3'));
     await resetAudioRecordingAndPlayback();
     await updateUserChatInStorage();
-    if(widget.id != '0'){
+    if(widget.conversationId != '0'){
       checkIfChatIsInChatList();
     }
   }
@@ -430,63 +467,41 @@ class _ChatState extends State<Chat> {
   }
 
   Future<void> updateUserChatInStorage() async {
-    await _secureStorageHelper.saveListData(widget.id, userChat);
+    await _secureStorageHelper.saveListData((currentConversationId == '' ? widget.conversationId : currentConversationId), userChat);
   }
 
-  Map<String, dynamic> getLastMessage() {
-    if (userChat.isEmpty) return {};
 
-    // Get the last date's key by accessing the last entry in userChat
-    String lastDateKey = userChat.last.keys.last;
 
-    // Get the list of messages for the last date
-    List<Map<String, dynamic>> messages = List<Map<String, dynamic>>.from(userChat.last[lastDateKey]);
+  void saveUpdatedUserChatList() {
+    if (!mounted) return;
 
-    if (messages.isEmpty) return {};
-
-    // Get the last message
-    Map<String, dynamic> lastMessage = messages.last;
-    late String message;
-    String senderName = lastMessage['senderName'];
-
-    if (widget.isGroup) {
-      if (lastMessage['message'] != '') {
-        message = '$senderName: ${lastMessage['message']}';
-      } else {
-        message = (lastMessage['messageType'] == 'audio') ? '$senderName: Audio Recording' : (lastMessage['messageType'] == 'image') ? '$senderName: Image' : (lastMessage['messageType'] == 'video') ? '$senderName: Video' : '$senderName: File';
-      }
-    } else {
-      if (lastMessage['message'] != '') {
-        message = lastMessage['message'];
-      } else {
-        message = (lastMessage['messageType'] == 'audio') ? 'Audio Recording' : (lastMessage['messageType'] == 'image') ? 'Image' : (lastMessage['messageType'] == 'video') ? 'Video' : 'File';
-      }
-    }
-
-    return {
-      'message': message,
-      'time': lastMessage['time'],
-    };
-  }
-
-  void saveUpdatedUserChatList(List<Map<String, dynamic>>? userChatList) {
-    Map<String, dynamic> lastMessageAndTime = getLastMessage();
+    Map<String, dynamic> lastMessageAndTime = Extras().getLastMessage(userChat, widget.isGroup);
     String lastMessage = lastMessageAndTime['message'];
     String lastMessageTime = lastMessageAndTime['time'];
 
     Provider.of<UserChatListChangeNotifier>(context, listen: false).addItem(
-        chatId: widget.id,
-        userImage: widget.userImage, chatName: widget.chatName,
-        lastMessage: lastMessage, lastMessageTime: lastMessageTime, isGroup: widget.isGroup,
-        userImage2: widget.userImage2, numberOfUsers: widget.numberOfUsers,
-        userImage3: widget.userImage3, groupImage: widget.userImage,
-        notification: false, isPinned: widget.isPinned, isArchived: widget.isArchived
+      conversationId: (currentConversationId == '') ? widget.conversationId : currentConversationId,
+      userImage: widget.userImage,
+      chatName: widget.chatName,
+      userName: widget.userName,
+      lastMessage: lastMessage,
+      lastMessageTime: lastMessageTime,
+      isGroup: widget.isGroup,
+      userImage2: widget.userImage2,
+      numberOfUsers: widget.numberOfUsers,
+      userImage3: widget.userImage3,
+      groupImage: widget.userImage,
+      notification: false,
+      isPinned: widget.isPinned,
+      isArchived: widget.isArchived,
+      participantsId: widget.participantsId,
+      oldConversationId: widget.conversationId,
     );
   }
 
+
   Future<void> checkIfChatIsInChatList() async {
-    List<Map<String, dynamic>>? userChatList = await _secureStorageHelper.readListData('userChatList');
-    saveUpdatedUserChatList(userChatList);
+    saveUpdatedUserChatList();
   }
 
   static Duration parseDuration(String duration) {
@@ -502,10 +517,10 @@ class _ChatState extends State<Chat> {
   Future<void> checkInternetConnection() async {
     bool isNetworkOn = await InternetConnectionChecker().hasConnection;
     if(!isNetworkOn){
-      InAppNotifications.show(
-          description: "Please check your internet connection, you won't be able to send or receive messages",
-          onTap: (){}
-      );
+      // InAppNotifications.show(
+      //     description: "Please check your internet connection, you won't be able to send or receive messages",
+      //     onTap: (){}
+      // );
     }
   }
 
@@ -519,10 +534,10 @@ class _ChatState extends State<Chat> {
       audioPlayer.play(AssetSource('sound_effects/chat_received_sent.mp3'));
       scrollToBottom();
       await updateUserChatInStorage();
-      if(widget.id != '0'){
+      if(widget.conversationId != '0'){
         await checkIfChatIsInChatList();
       }
-      checkInternetConnection();
+      // checkInternetConnection();
     }
     setState(() {
       isShowCameraOptions = false;
@@ -531,38 +546,41 @@ class _ChatState extends State<Chat> {
 
   Future<void> sendPlainMessage() async {
     String message = messageController.text;
+    messageController.clear();
+    Map<String, dynamic> userDetails = await readJwtTokenAndID();
     if (message.isNotEmpty) {
       setState(() {
         List<Map<String, dynamic>> updatedUserChat;
         if(containsURL(message)){
           updatedUserChat = SendMessage().sendLinkMessageBubbleChat(List.from(userChat), message);
         } else {
-          updatedUserChat = SendMessage().sendMessageBubbleChat(List.from(userChat), message);
+          updatedUserChat = SendMessage().sendMessageBubbleChat(List.from(userChat), message, true, uuid.v4(), "Me", null);
         }
         userChat = updatedUserChat;
         _initializeChatSelectionState();
       });
       audioPlayer.play(AssetSource('sound_effects/chat_received_sent.mp3'));
       scrollToBottom();
+      await SendReceiveMessages().sendMessageBackend(userDetails['jwt_token'], message, (currentConversationId == '') ? widget.conversationId : currentConversationId);
       await updateUserChatInStorage();
-      if(widget.id != '0'){
+      if(widget.conversationId != '0'){
         await checkIfChatIsInChatList();
       }
-      checkInternetConnection();
-      messageController.clear();
+      // checkInternetConnection();
     }
   }
 
-  bool containsURL(String string) {
-    const urlPattern = r'(https?:\/\/[^\s]+)';
-    final result = RegExp(urlPattern, caseSensitive: false).hasMatch(string);
-    return result;
+  Future<Map<String, dynamic>> readJwtTokenAndID() async {
+    String? jsonString = await storage.read(key: 'user_data');
+    Map<String, dynamic> userLoggedInData = jsonDecode(jsonString!);
+    return userLoggedInData;
+      return {};
   }
 
-  List<String> extractURLs(String string) {
-    const urlPattern = r'(https?:\/\/[^\s]+)';
-    final matches = RegExp(urlPattern, caseSensitive: false).allMatches(string);
-    return matches.map((match) => match.group(0)!).toList();
+  bool containsURL(String string) {
+    const urlPattern = r'(?:(?:https?|ftp):\/\/)?(?:[\w-]+\.)+[a-zA-Z]{2,6}';
+    final result = RegExp(urlPattern, caseSensitive: false).hasMatch(string);
+    return result;
   }
 
   @override
@@ -571,7 +589,8 @@ class _ChatState extends State<Chat> {
       key: _scaffoldKey,
       backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
       resizeToAvoidBottomInset: true,
-      drawer: Drawer(
+      endDrawerEnableOpenDragGesture: false, // Disable the swipe gesture to open the drawer
+      endDrawer: Drawer(
         width: MediaQuery
             .of(context)
             .size
@@ -590,14 +609,14 @@ class _ChatState extends State<Chat> {
             ),
           ),
           Positioned(
-            bottom: 20,
-            right: (showScrollBottomButton) ? 10 : 24,
-            child: Column(
-              children: [
-                scrollToBottomButton(),
-                recordingOptions()
-              ],
-            )
+              bottom: 20,
+              right: (showScrollBottomButton) ? 10 : 24,
+              child: Column(
+                children: [
+                  scrollToBottomButton(),
+                  recordingOptions()
+                ],
+              )
           ),
           copyMessage(),
           messagesSelectedDisplay(),
@@ -628,7 +647,7 @@ class _ChatState extends State<Chat> {
           ),
           Column(
             children: [
-              (widget.id == '0') ?
+              (widget.conversationId == '0') ?
               SvgPicture.asset(
                 'assets/icons/ai_logo.svg',
                 height: 40,
@@ -695,8 +714,8 @@ class _ChatState extends State<Chat> {
                         ),
                       )
                   : CacheImage(numberOfUsers: widget.numberOfUsers, imageUrl: widget.userImage, isGroup: widget.isGroup,),
-              const SizedBox(height: 5,), //Two people/Group
-              Text(widget.chatName, style: TextStyle(
+              SizedBox(height: (int.parse(widget.numberOfUsers) > 2) ? 0: 5,), //Two people/Group
+              Text(Extras().capitalize(widget.chatName), style: TextStyle(
                   color: Theme.of(context).colorScheme.scrim,
                   fontSize: 12,
                   fontFamily: 'Inter',
@@ -705,10 +724,10 @@ class _ChatState extends State<Chat> {
           ),
           Align(
             alignment: Alignment.centerRight,
-            child: (widget.id == '0')
+            child: (widget.conversationId == '0')
                 ? IconButton(
               onPressed: () {
-                _scaffoldKey.currentState?.openDrawer();
+                _scaffoldKey.currentState?.openEndDrawer();
               },
               icon: SvgPicture.asset(
                 'assets/icons/hamburger_icon.svg', height: 20, colorFilter: ColorFilter.mode(
@@ -776,7 +795,7 @@ class _ChatState extends State<Chat> {
               isSender: message['isSender'],
               isStarred: message['isStarred'],
               showCopyMessage: showCopyMessage,
-              chatId: widget.id,
+              chatId: widget.conversationId,
               isGroup: widget.isGroup, // Replace with actual isGroup value if needed
               chatTime: DateFormat('HH:mm').format(DateTime.parse(message['time'])), // Replace with actual chatTime if needed
               senderName: message['senderName'],
@@ -832,16 +851,32 @@ class _ChatState extends State<Chat> {
           children: [
             Column(
               children: [
-                Lottie.asset((widget.id == '0')
+                Lottie.asset((widget.conversationId == '0')
                     ? 'assets/lottie_animations/new_ai_chat_animation.json'
                     : 'assets/lottie_animations/new_user_chat_animation.json', width: 80),
-                SizedBox(height: (widget.id == '0') ? 0 : 10,),
+                SizedBox(height: (widget.conversationId == '0') ? 0 : 10,),
                 Text('Quiet around here..start a conversation', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontFamily: 'Inter', fontSize: 8),)
               ],
             ),
           ],
         )
     );
+  }
+
+  // Preload images just ahead of the current scroll position
+  void _preloadNextBatch() {
+    double scrollPosition = scrollController.position.pixels;
+    double maxScroll = scrollController.position.maxScrollExtent;
+
+    final List<String> imagePaths = ['path1.jpg', 'path2.jpg', 'path3.jpg'];
+
+    if (scrollPosition >= maxScroll - 200) {
+      for (int i = 0; i < 5; i++) {
+        if (i + 5 < imagePaths.length) {
+          precacheImage(FileImage(File(imagePaths[i + 5])), context);
+        }
+      }
+    }
   }
 
   Widget buildChat(List<Widget> chatWidgets) {
@@ -1025,10 +1060,10 @@ class _ChatState extends State<Chat> {
                           }
                           scrollToBottom();
                           await updateUserChatInStorage();
-                          if (widget.id != '0') {
+                          if (widget.conversationId != '0') {
                             await checkIfChatIsInChatList();
                           }
-                          checkInternetConnection();
+                          // checkInternetConnection();
                         }
                       },
                       child: ClipRRect(
@@ -1421,7 +1456,7 @@ class _ChatState extends State<Chat> {
               children: [
                 GestureDetector(
                   onTap: () async {
-                    Map<String, dynamic> photoDetails = await Camera().takeImageWithCamera();
+                    Map<String, dynamic> photoDetails = await Camera().takeImageWithCamera(false);
                     sendMediaMessage(photoDetails, SendMessage().sendPhotoMessageBubbleChat(userChat,
                       photoDetails['file'], photoDetails['name'],
                     ));
@@ -1465,7 +1500,7 @@ class _ChatState extends State<Chat> {
                 const SizedBox(height: 20,),
                 GestureDetector(
                   onTap: () async {
-                    Map<String, dynamic> photoVideoDetails = await Camera().getMediaFromFolder();
+                    Map<String, dynamic> photoVideoDetails = await Camera().getMediaFromFolder(false);
                     sendMediaMessage(photoVideoDetails, SendMessage().sendMediaMessageBubbleChat(userChat,
                       photoVideoDetails['file'], photoVideoDetails['name'], photoVideoDetails['mediaType']
                     ));
@@ -1501,10 +1536,10 @@ class _ChatState extends State<Chat> {
                       }
                       scrollToBottom();
                       await updateUserChatInStorage();
-                      if (widget.id != '0') {
+                      if (widget.conversationId != '0') {
                         await checkIfChatIsInChatList();
                       }
-                      checkInternetConnection();
+                      // checkInternetConnection();
                     }
                     setState(() {
                       isShowCameraOptions = false;

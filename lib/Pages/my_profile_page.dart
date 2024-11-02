@@ -1,16 +1,23 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:jarvis_app/Components/Utilities/BackendUtilities/friends.dart';
 import 'package:jarvis_app/Components/Utilities/BackendUtilities/profile_user.dart';
 import 'package:jarvis_app/Components/screen_loader.dart';
 import 'package:lottie/lottie.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:shimmer/shimmer.dart';
+
+import '../Components/Utilities/BackendUtilities/upload_media_files.dart';
+import '../Components/Utilities/camera.dart';
+import '../Components/Utilities/extras.dart';
 
 class MyProfilePage extends StatefulWidget {
   const MyProfilePage({super.key});
@@ -26,6 +33,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
   TextEditingController bioController = TextEditingController();
 
   final storage = const FlutterSecureStorage();
+  OverlayEntry? overlayEntry;
 
   String name = '';
   String userName = '';
@@ -37,26 +45,59 @@ class _MyProfilePageState extends State<MyProfilePage> {
 
   bool progressVisible = false;
 
+  late StreamSubscription<List<ConnectivityResult>> _subscription;
+
+  @override
+  void dispose() {
+    overlayEntry?.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
-    init();
     super.initState();
+    init(); // Attempt to fetch data initially
+    _subscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> result) async {
+      if (!result.contains(ConnectivityResult.none)) {
+        bool isConnected = await checkInternetConnection();
+        if (isConnected) {
+          init(); // Retry fetching data when connection is restored
+        }
+      }
+    });
   }
 
   Future<void> init() async {
-    Map<String, dynamic> userDetails = await readJwtTokenAndID();
-    if (userDetails.isNotEmpty){
-      Map<String, dynamic> profileDetails = await ProfileUser().retrieveProfileDetails(userDetails['jwt_token'], userDetails['userID'], false);
+    await retrieveProfileDetails();
+  }
+
+  Future<void> retrieveProfileDetails() async {
+    Map<String, dynamic> profileDetails = await ProfileUser().retrieveProfileDetails(
+      await Extras().retrieveJWT(),
+      await Extras().retrieveUserID(),
+      false,
+    );
+
+    if (profileDetails.isEmpty || profileDetails['profile'] == null) {
+      return;
+    }
+
+    if (mounted) {
       setState(() {
-        name = profileDetails['profile']['fullname'];
-        userName = '${profileDetails['profile']['username']}';
-        bio = profileDetails['profile']['biography'];
-        email = profileDetails['profile']['email'];
-        coins = profileDetails['profile']['jarviscoin'].toString();
+        name = profileDetails['profile']['fullname'] ?? '';
+        userName = profileDetails['profile']['username'] ?? '';
+        bio = profileDetails['profile']['biography'] ?? '';
+        email = profileDetails['profile']['email'] ?? '';
+        coins = profileDetails['profile']['jarviscoin']?.toString() ?? '0';
         isDataLoading = false;
         profileUrl = profileDetails['profile']['profilepicture'] ?? '';
       });
     }
+  }
+
+  Future<bool> checkInternetConnection() async {
+    bool isNetworkOn = await InternetConnectionChecker().hasConnection;
+    return isNetworkOn;
   }
 
   Future<Map<String, dynamic>> readJwtTokenAndID() async {
@@ -66,19 +107,6 @@ class _MyProfilePageState extends State<MyProfilePage> {
       return userLoggedInData;
     }
     return {};
-  }
-
-  void onImageLoadFailed(error) {
-    String errorMessage = '';
-    if (error is SocketException) {
-      errorMessage = 'Check your network connection. Profile Images failed to load';
-    } else {
-      errorMessage = 'Contact our customer service. Profile Images failed to load';
-    }
-    InAppNotifications.show(
-        description: errorMessage,
-        onTap: () {}
-    );    // Place your function logic here
   }
 
   void showEditProfileSheet(BuildContext context, String typeName, TextEditingController inputController, Function(String) onSave, String value) {
@@ -96,9 +124,110 @@ class _MyProfilePageState extends State<MyProfilePage> {
   }
 
   void updateProgressVisible() {
+    if (!progressVisible){
+      showLoadingOverlay();
+    } else {
+      hideLoadingOverlay();
+    }
     setState(() {
       progressVisible = !progressVisible;
     });
+  }
+
+  void showUploadImageSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: keyboardHeight),
+          child: uploadImageSheet(),
+        );
+      },
+    );
+  }
+
+  void showLoadingOverlay() {
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned.fill(
+        child: LoadingAnimation(progressVisible: progressVisible),
+      ),
+    );
+    Overlay.of(context).insert(overlayEntry!);
+  }
+
+  void hideLoadingOverlay() {
+    overlayEntry?.remove();
+    overlayEntry = null;
+  }
+
+  Future<void> uploadProfilePictureFromGallery () async {
+    updateProgressVisible();
+    Map<String, dynamic> mediaDetails = await Camera().getMediaFromFolder(true);
+    Map<String, dynamic> userDetails = await readJwtTokenAndID();
+
+    if (mediaDetails.isEmpty || mediaDetails['mediaType'] == 'Videos') {
+      String message = mediaDetails.isEmpty
+          ? 'Image upload failed. The upload process could not be completed.'
+          : 'Image upload failed. Video files cannot be uploaded as a profile image.';
+
+      InAppNotifications.show(description: message);
+      updateProgressVisible();
+      return;
+    }
+
+    String profileImageUrl = await UploadMediaFiles().uploadImage(mediaDetails['media']);
+    bool uploadSuccess = await ProfileUser().updateProfileDetails(userDetails['jwt_token'], 'ProfilePicture', profileImageUrl);
+
+    String notification = uploadSuccess
+        ? 'Image upload successful. Your profile image has been changed.'
+        : 'Image upload failed. The upload process could not be completed.';
+
+    InAppNotifications.show(description: notification);
+
+    if (!uploadSuccess) {
+      updateProgressVisible();
+      return;
+    }
+
+    setState(() {
+      profileUrl = profileImageUrl;
+    });
+    Navigator.pop(context);
+    updateProgressVisible();
+  }
+
+  Future<void> uploadProfilePictureFromCamera () async {
+    updateProgressVisible();
+    Map<String, dynamic> mediaDetails = await Camera().takeImageWithCamera(true);
+    if(mediaDetails['name'] == 'Camera access denied. Please enable it in the app settings.'){
+      InAppNotifications.show(description: 'Camera access denied. Please enable it in the app settings.');
+      updateProgressVisible();
+      return;
+    }
+    Map<String, dynamic> userDetails = await readJwtTokenAndID();
+
+    String profileImageUrl = await UploadMediaFiles().uploadImage(mediaDetails['media']);
+    bool uploadSuccess = await ProfileUser().updateProfileDetails(userDetails['jwt_token'], 'ProfilePicture', profileImageUrl);
+
+    String notification = uploadSuccess
+        ? 'Image upload successful. Your profile image has been changed.'
+        : 'Image upload failed. The upload process could not be completed.';
+
+    InAppNotifications.show(description: notification);
+
+    if (!uploadSuccess) {
+      updateProgressVisible();
+      return;
+    }
+
+    setState(() {
+      profileUrl = profileImageUrl;
+    });
+    Navigator.pop(context);
+    updateProgressVisible();
   }
 
   @override
@@ -109,7 +238,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
         children: [
           SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.only(left: 5, top: 50),
+                padding: const EdgeInsets.only(left: 5, top: 50, bottom: 50),
                 child: Column(
                   children: [
                     backHeader(),
@@ -123,7 +252,6 @@ class _MyProfilePageState extends State<MyProfilePage> {
                 ),
               )
           ),
-          LoadingAnimation(progressVisible: progressVisible,)
         ],
       )
     );
@@ -207,7 +335,6 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                       child: Lottie.asset('assets/lottie_animations/loading_animation.json')
                                   ),
                                   errorWidget: (context, url, error) {
-                                    onImageLoadFailed(error); // Call the function when image loading fails
                                     return CircleAvatar(
                                       radius: 40,
                                       backgroundColor: Colors.grey[300],
@@ -227,7 +354,9 @@ class _MyProfilePageState extends State<MyProfilePage> {
                     bottom: 10,
                     right: 0,
                     child: GestureDetector(
-                      onTap: () {},
+                      onTap: () {
+                        showUploadImageSheet(context);
+                      },
                       child: Container(
                         width: 30,
                         height: 30,
@@ -560,6 +689,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                 String jwtToken = jwtTokenAndID['jwt_token'];
                 bool ableToUpdateProfileOnline = await ProfileUser().updateProfileDetails(jwtToken, typeName, inputController.text);
                 if (!ableToUpdateProfileOnline){
+                  updateProgressVisible();
                   return;
                 }
                 onSave(inputController.text);
@@ -593,4 +723,105 @@ class _MyProfilePageState extends State<MyProfilePage> {
       ),
     );
   }
+
+  Widget uploadImageSheet() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      color: Colors.transparent,
+      height: 215,
+      child: Column(
+        children: [
+          Expanded(
+            child: Container(
+              height: 100,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      await uploadProfilePictureFromGallery();
+                    },
+                    child: Container(
+                      color: Colors.transparent,
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          Icon(Icons.image, size: 20, color: Theme.of(context).colorScheme.onSecondaryContainer,),
+                          const SizedBox(
+                            width: 15,
+                          ),
+                          Text('Choose from Gallery', style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSecondaryContainer,
+                              fontFamily: 'Inter',
+                              fontSize: 12
+                          ),)
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: double.infinity,
+                    height: .5,
+                    color: Theme.of(context).colorScheme.primary.withOpacity(.2),
+                  ),
+                  GestureDetector(
+                    onTap: () async {
+                      await uploadProfilePictureFromCamera();
+                    },
+                    child: Container(
+                      color: Colors.transparent,
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          Icon(Icons.camera, size: 20, color: Theme.of(context).colorScheme.onSecondaryContainer,),
+                          const SizedBox(
+                            width: 15,
+                          ),
+                          Text('Capture Photo', style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSecondaryContainer,
+                              fontFamily: 'Inter',
+                              fontSize: 12
+                          ),)
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(
+            height: 5,
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.green,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              minimumSize: const Size(double.infinity, 35),
+              padding: EdgeInsets.zero,
+            ),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.scrim,
+                  fontSize: 10,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w400
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
 }

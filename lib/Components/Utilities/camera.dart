@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:image/image.dart' as img;
 
 class Camera {
   Future<void> getLostData() async {
@@ -57,20 +59,33 @@ class Camera {
     };
   }
 
-  Future<Map<String, dynamic>> getMediaFromFolder() async {
+  Future<Map<String, dynamic>> getMediaFromFolder(bool noVideo) async {
     final ImagePicker picker = ImagePicker();
     final XFile? media = await picker.pickMedia();
-    if(media != null){
+
+    if (media != null) {
       String mediaType = getType(media.path);
-      if(mediaType == 'Pictures' || mediaType == 'Videos'){
-        Map<String, dynamic> mediaDetails = await storeMediaPermanently(media, mediaType);
+
+      if (mediaType == 'Videos' && noVideo) {
         return {
-          'file': mediaDetails['file'],
-          'name': mediaDetails['name'],
           'mediaType': mediaType
         };
       }
+
+      if (mediaType == 'Pictures' || mediaType == 'Videos') {
+        Map<String, dynamic> mediaDetails = {};
+        if(!noVideo){
+          mediaDetails = await storeMediaPermanently(media, mediaType);
+        }
+        return {
+          'file': !noVideo ? mediaDetails['file'] : '',
+          'name': !noVideo ? mediaDetails['name'] : '',
+          'mediaType': mediaType,
+          'media': media
+        };
+      }
     }
+
     return {};
   }
 
@@ -86,20 +101,72 @@ class Camera {
         allMedia.add({
           'file': mediaDetails['file'],
           'name': mediaDetails['name'],
-          'mediaType': mediaType
+          'mediaType': mediaType,
+          'medias': mediaDetails['medias']
         });
       }
     }
     return allMedia;
   }
 
-  Future<Map<String, dynamic>> takeImageWithCamera() async {
+  // Future<Map<String, dynamic>> takeImageWithCamera(bool profileUpload) async {
+  //   final ImagePicker picker = ImagePicker();
+  //   Map<String, dynamic> photoDetails = {};
+  //
+  //   try {
+  //     final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+  //
+  //     if (photo == null) {
+  //       return {
+  //         'name': 'No image selected.',
+  //       };
+  //     }
+  //
+  //     if(!profileUpload){
+  //       photoDetails = await storeMediaPermanently(photo, 'Pictures');
+  //     }
+  //     return {
+  //       'file': !profileUpload ? photoDetails['file'] : '',
+  //       'name': !profileUpload ? photoDetails['name'] : '',
+  //       'media': photo
+  //     };
+  //   } on PlatformException catch (e) {
+  //     if (e.code == 'camera_access_denied') {
+  //       return {
+  //         'name': 'Camera access denied. Please enable it in the app settings.',
+  //       };
+  //     } else {
+  //       return {
+  //         'name': 'An error occurred: ${e.message}',
+  //       };
+  //     }
+  //   } catch (e) {
+  //     return {
+  //       'name': 'An unexpected error occurred: $e',
+  //     };
+  //   }
+  // }
+
+  Future<Map<String, dynamic>> takeImageWithCamera(bool profileUpload) async {
     final ImagePicker picker = ImagePicker();
+    Map<String, dynamic> photoDetails = {};
+
     final XFile? photo = await picker.pickImage(source: ImageSource.camera);
-    Map<String, dynamic> photoDetails = await storeMediaPermanently(photo!, 'Pictures');
+
+    if (photo == null) {
+      return {
+        'name': 'No image selected.',
+      };
+    }
+
+    if (!profileUpload) {
+      photoDetails = await storeMediaPermanently(photo, 'Pictures');
+    }
+
     return {
-      'file': photoDetails['file'],
-      'name': photoDetails['name'],
+      'file': !profileUpload ? photoDetails['file'] : '',
+      'name': !profileUpload ? photoDetails['name'] : '',
+      'media': photo,
     };
   }
 
@@ -110,6 +177,7 @@ class Camera {
     return {
       'file': videoDetails['file'],
       'name': videoDetails['name'],
+      'media': videoDetails['media']
     };
   }
 }

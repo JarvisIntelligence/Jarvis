@@ -31,10 +31,28 @@ class UserChatListChangeNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> disableNotification(String conversationId) async {
+    int chatIndex = _items.indexWhere((item) => item['conversationId'] == conversationId);
+
+    if (chatIndex != -1) {
+      _items[chatIndex]['notification'] = false;
+      _itemsDatabase[chatIndex]['notification'] = false;
+
+      await ChatListDatabaseHelper().updateChat({
+        'conversationId': conversationId,
+        'notification': 0,
+      });
+
+      notifyListeners();
+    }
+  }
+
   Future<void> addItem({
-    required String chatId,
+    required String conversationId,
+    required String oldConversationId,
     required String userImage,
     required String chatName,
+    required String userName,
     required String lastMessage,
     required String lastMessageTime,
     required bool isGroup,
@@ -44,16 +62,32 @@ class UserChatListChangeNotifier extends ChangeNotifier {
     required String groupImage,
     required bool notification,
     required bool isPinned,
-    required bool isArchived
+    required bool isArchived,
+    required String participantsId,
   }) async {
-    // Check if the item with the given chatId already exists
-    int existingIndex = _items.indexWhere((item) => item['id'] == chatId);
+    // If oldConversationId is the same as conversationId, skip the replacement logic
+    if (oldConversationId != conversationId) {
+      int oldIndex = _items.indexWhere((item) => item['conversationId'] == oldConversationId);
+
+      if (oldIndex != -1) {
+        // Replace oldConversationId with conversationId
+        _items[oldIndex]['conversationId'] = conversationId;
+        _itemsDatabase[oldIndex]['conversationId'] = conversationId;
+
+        // Update in the database with the new conversationId
+        await ChatListDatabaseHelper().updateConversationId(oldConversationId, conversationId);
+      }
+    }
+
+    // Check if the current conversationId exists
+    int existingIndex = _items.indexWhere((item) => item['conversationId'] == conversationId);
 
     Map<String, dynamic> chatItem = {
       'notification': notification,
-      'id': chatId,
+      'conversationId': conversationId,
       'userImage': userImage,
       'name': chatName,
+      'userName': userName,
       'lastMessage': lastMessage,
       'lastMessageTime': lastMessageTime,
       'isGroup': isGroup,
@@ -62,14 +96,16 @@ class UserChatListChangeNotifier extends ChangeNotifier {
       'userImage3': userImage3,
       'groupImage': groupImage,
       'isPinned': isPinned,
-      'isArchived': isArchived
+      'isArchived': isArchived,
+      'participantsId': participantsId,
     };
 
     Map<String, dynamic> chatItemDatabase = {
       'notification': notification ? 1 : 0,
-      'id': chatId,
+      'conversationId': conversationId,
       'userImage': userImage,
       'name': chatName,
+      'userName': userName,
       'lastMessage': lastMessage,
       'lastMessageTime': lastMessageTime,
       'isGroup': isGroup ? 1 : 0,
@@ -78,7 +114,8 @@ class UserChatListChangeNotifier extends ChangeNotifier {
       'userImage3': userImage3,
       'groupImage': groupImage,
       'isPinned': isPinned ? 1 : 0,
-      'isArchived': isArchived ? 1 : 0
+      'isArchived': isArchived ? 1 : 0,
+      'participantsId': participantsId,
     };
 
     if (existingIndex != -1) {
@@ -92,6 +129,8 @@ class UserChatListChangeNotifier extends ChangeNotifier {
       _itemsDatabase.add(chatItemDatabase);
       await ChatListDatabaseHelper().insertChat(chatItemDatabase);
     }
+
     notifyListeners();
   }
+
 }

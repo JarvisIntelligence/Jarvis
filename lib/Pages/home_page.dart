@@ -1,15 +1,23 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:jarvis_app/Components/Utilities/SqfliteHelperClasses/chat_list_database_helper.dart';
 import 'package:jarvis_app/Components/home_chat.dart';
+import 'package:jarvis_app/main.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:lottie/lottie.dart';
-
 import '../Components/ChangeNotifiers/user_chat_list_change_notifier.dart';
+import '../Components/Utilities/BackendUtilities/send_receive_messages.dart';
+import '../Components/Utilities/SqfliteHelperClasses/contact_list_database_helper.dart';
+import '../Components/Utilities/contact_list.dart';
+import '../Components/Utilities/extras.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,28 +40,60 @@ class _HomePageState extends State<HomePage> {
   Set<String> selectedData = {};
   bool shouldPinOrUnPinChats = false;
   int numberOfArchivedChats = 0;
+  bool showNoInternetBox = false;
 
   late Future<LottieComposition> _lottieComposition;
+  late StreamSubscription<List<ConnectivityResult>> _subscription;
 
   @override
   void initState() {
     super.initState();
     _lottieComposition = _loadLottieComposition();
+    _subscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> result) {
+      checkInternetConnection(result);
+    });
     init();
   }
 
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+
   Future<void> init() async {
-    // Initial load from database
-    final listNotifier = Provider.of<UserChatListChangeNotifier>(context, listen: false);
-    await listNotifier.loadInitialData();
-    await retrieveNumberOfArchivedChats();
-    setState(() {
-      userChatList = listNotifier.userChatList;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final contactList = await ContactListDatabaseHelper().getAllContacts();
+      if (contactList.isEmpty && mounted) {
+        await ContactList().retrieveAndStoreContactListFromOnline(context);
+      }
+      final listNotifier = Provider.of<UserChatListChangeNotifier>(context, listen: false);
+      await listNotifier.loadInitialData();
+
+      if (listNotifier.userChatList.isEmpty && mounted) {
+        await SendReceiveMessages().addingConversations(
+          await Extras().retrieveJWT(),
+          await Extras().retrieveUserID(),
+          {},
+          context,
+        );
+        await listNotifier.loadInitialData();
+      }
+      SendReceiveMessages().connectToSocket(
+        await Extras().retrieveJWT(),
+        await Extras().retrieveUserID(),
+        context
+      );
+      await retrieveNumberOfArchivedChats();
+      setState(() {
+        userChatList = listNotifier.userChatList;
+      });
       _initializeChatSelectionState(userChatList);
     });
+
   }
+
+
 
   Future<LottieComposition> _loadLottieComposition() async {
     return await AssetLottie('assets/lottie_animations/add_friend_animation.json').load();
@@ -66,7 +106,7 @@ class _HomePageState extends State<HomePage> {
 
   void _initializeChatSelectionState(List<Map<String, dynamic>> userChatList) {
     for (var chat in userChatList) {
-      String id = chat['id'].toString();
+      String id = chat['conversationId'].toString();
       isChatSelectedMap[id] = false;
     }
   }
@@ -101,6 +141,19 @@ class _HomePageState extends State<HomePage> {
       );
     }
     setState(() {});
+  }
+
+  Future<void> checkInternetConnection(List<ConnectivityResult> result) async {
+    if(result.contains(ConnectivityResult.none)) {
+      setState(() {
+        showNoInternetBox = true;
+      });
+    } else {
+      bool hasInternet = await InternetConnectionChecker().hasConnection;
+      setState(() {
+        showNoInternetBox = !hasInternet;
+      });
+    }
   }
 
   void increaseDecreaseNumberOfSelectedChats(String increaseOrDecrease) {
@@ -185,12 +238,11 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     // Listen to UserChatListChangeNotifier changes
     var listNotifier = context.watch<UserChatListChangeNotifier>();
-    var userChatList = listNotifier.userChatList;
+    userChatList = listNotifier.userChatList;
 
     // Sort userChats by lastMessageTime in descending order
     userChatList.sort((a, b) => b['lastMessageTime'].compareTo(a['lastMessageTime']));
@@ -198,8 +250,12 @@ class _HomePageState extends State<HomePage> {
     List<Widget> buildChatWidgets(List<Map<String, dynamic>> chatList) {
       List<Widget> chatWidgets = [];
 
+
       for (int index = 0; index < chatList.length; index++) {
         var entry = chatList[index];
+        String encodedUserImage = Extras().encodeUrl(entry['userImage']);
+        String encodedUserImage2 = Extras().encodeUrl(entry['userImage2']);
+        String encodedUserImage3 = Extras().encodeUrl(entry['userImage3']);
         chatWidgets.add(
           HomeChat(
             notification: entry['notification'],
@@ -209,21 +265,25 @@ class _HomePageState extends State<HomePage> {
             numberOfUsers: entry['numberOfUsers'],
             groupImage: entry['groupImage'],
             name: entry['name'],
+            userName: entry['userName'],
             lastMessage: entry['lastMessage'],
             lastMessageTime: DateTime.parse(entry['lastMessageTime']),
             isGroup: entry['isGroup'],
-            id: entry['id'],
+            conversationId: entry['conversationId'],
+            participantsId: entry['participantsId'],
             isPinned: entry['isPinned'],
             isArchived: entry['isArchived'],
             increaseDecreaseNumberOfSelectedChats: increaseDecreaseNumberOfSelectedChats,
             isChatSelected: isChatSelectedMap[entry['id']] ?? false,
             changeIsChatSelected: () => changeIsChatSelected(entry['id']),
             addChatToDataMap: () => addChatToDataMap(entry['id']),
-            removeChatFromDataMap: () => removeChatFromDataMap(entry['id'])
-      ),
+            removeChatFromDataMap: () => removeChatFromDataMap(entry['id']),
+            encodedUserImage: encodedUserImage,
+            encodedUserImage2: encodedUserImage2,
+            encodedUserImage3: encodedUserImage3,
+          ),
         );
       }
-
       return chatWidgets;
     }
 
@@ -350,6 +410,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(
               height: 10,
             ),
+            notificationBox(),
             aiChatBody() //AI Chat
           ],
         ),
@@ -357,45 +418,102 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget aiChatBody() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 13, right: 10, top: 15, bottom: 15),
-      child: GestureDetector(
-          onTap: () {
-            context.go('/homepage/chat/JARVIS AI/false/a/a/0/a/1');
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  SvgPicture.asset(
-                    'assets/icons/ai_logo.svg',
-                    height: 45,
-                  ),
-                  const SizedBox(width: 15,),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('JARVIS AI', style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width - 200,
-                        child: Text("Ask AI anything",
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w400, fontFamily: 'Inter'),
-                        ),
-                      )
-                    ],
-                  ),
-                ],
+  Widget notificationBox() {
+    return Visibility(
+      visible: showNoInternetBox,
+      child: Column(
+        children: [
+          const SizedBox(
+            height: 20,
+          ),
+          Container(
+              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(10),
               ),
-              SvgPicture.asset(
-                'assets/icons/ai_icon.svg',
-                height: 30,
+              child: Row(
+                  children: [
+                    Icon(Icons.wifi_off, color: Theme.of(context).colorScheme.onPrimary), // No internet icon
+                    const SizedBox(width: 25),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "No internet connection",
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary, // Text color
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold
+                          ),
+                        ),
+                        Container(
+                          constraints: BoxConstraints(
+                              maxWidth: MediaQuery.of(context).size.width - 180
+                          ),
+                          child: Text(
+                            "Your messages won't send or arrive until you're connected again.",
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary, // Text color
+                              fontSize: 12,
+                            ),
+                          ),
+                        )
+                      ],
+                    )
+                  ]
               )
-            ],
-          )
+          ),
+          const SizedBox(
+            height: 10,
+          ),
+        ],
+    )
+    );
+  }
+
+  Widget aiChatBody() {
+    return Container(
+      color: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 13, right: 10, top: 15, bottom: 15),
+        child: GestureDetector(
+            onTap: () {
+              context.go('/homepage/chat/JARVIS AI/false/a/a/0/a/1/false/false');
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    SvgPicture.asset(
+                      'assets/icons/ai_logo.svg',
+                      height: 45,
+                    ),
+                    const SizedBox(width: 15,),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('JARVIS AI', style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width - 200,
+                          child: Text("Ask AI anything",
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 10, fontWeight: FontWeight.w400, fontFamily: 'Inter'),
+                          ),
+                        )
+                      ],
+                    ),
+                  ],
+                ),
+                SvgPicture.asset(
+                  'assets/icons/ai_icon.svg',
+                  height: 30,
+                )
+              ],
+            )
+        ),
       ),
     );
   }
@@ -448,12 +566,12 @@ class _HomePageState extends State<HomePage> {
 
   Widget chatListBody(List<Widget> userChatsWidgets, List<Widget> filteredListWidgets) {
     var listNotifier = Provider.of<UserChatListChangeNotifier>(context, listen: true);
-    var userChatList = listNotifier.userChatList;
+    var tempUserChatList = listNotifier.userChatList;
 
     return Expanded(
       child: SingleChildScrollView(
         child: Column(
-          children: (numberOfArchivedChats < 1 && userChatList.isEmpty)
+          children: (numberOfArchivedChats < 1 && tempUserChatList.isEmpty)
               ? [userChatListEmpty()]
               : userChatListNotEmpty(userChatsWidgets, filteredListWidgets),
         ),
@@ -533,7 +651,7 @@ class _HomePageState extends State<HomePage> {
       bottom: 50,
       right: 20,
       child: ElevatedButton(
-        onPressed: () {
+        onPressed: () async {
           context.go('/homepage/addnewusers');
         },
         style: ButtonStyle(

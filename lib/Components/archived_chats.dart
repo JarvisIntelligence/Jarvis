@@ -7,6 +7,7 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import 'ChangeNotifiers/user_chat_list_change_notifier.dart';
+import 'Utilities/extras.dart';
 import 'home_chat.dart';
 
 class ArchivedChats extends StatefulWidget {
@@ -116,6 +117,9 @@ class _ArchivedChatsState extends State<ArchivedChats> {
 
       for (int index = 0; index < chatList.length; index++) {
         var entry = chatList[index];
+        String encodedUserImage = Extras().encodeUrl(entry['userImage']);
+        String encodedUserImage2 = Extras().encodeUrl(entry['userImage2']);
+        String encodedUserImage3 = Extras().encodeUrl(entry['userImage3']);
         chatWidgets.add(
           HomeChat(
               notification: entry['notification'],
@@ -125,17 +129,22 @@ class _ArchivedChatsState extends State<ArchivedChats> {
               numberOfUsers: entry['numberOfUsers'],
               groupImage: entry['groupImage'],
               name: entry['name'],
+              userName: entry['userName'],
               lastMessage: entry['lastMessage'],
               lastMessageTime: DateTime.parse(entry['lastMessageTime']),
               isGroup: entry['isGroup'],
-              id: entry['id'],
+              conversationId: entry['conversationId'],
+              participantsId: entry['participantsId'],
               isPinned: entry['isPinned'],
               isArchived: entry['isArchived'],
               increaseDecreaseNumberOfSelectedChats: increaseDecreaseNumberOfSelectedChats,
               isChatSelected: isChatSelectedMap[entry['id']] ?? false,
               changeIsChatSelected: () => changeIsChatSelected(entry['id']),
               addChatToDataMap: () => addChatToDataMap(entry['id']),
-              removeChatFromDataMap: () => removeChatFromDataMap(entry['id'])
+              removeChatFromDataMap: () => removeChatFromDataMap(entry['id']),
+              encodedUserImage: encodedUserImage,
+              encodedUserImage2: encodedUserImage2,
+              encodedUserImage3: encodedUserImage3,
           ),
         );
       }

@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'package:any_link_preview/any_link_preview.dart';
 import 'package:chat_bubbles/bubbles/bubble_file.dart';
 import 'package:chat_bubbles/bubbles/bubble_normal_audio.dart';
 import 'package:chat_bubbles/bubbles/bubble_normal_image.dart';
 import 'package:chat_bubbles/bubbles/bubble_normal_video.dart';
+import 'package:chat_bubbles/bubbles/bubble_special_link.dart';
 import 'package:chat_bubbles/bubbles/bubble_special_three.dart';
 import 'package:clipboard/clipboard.dart';
 import 'package:flutter/material.dart';
@@ -189,8 +191,8 @@ class _ChatBubbleState extends State<ChatBubble> {
   @override
   Widget build(BuildContext context) {
     List<Widget>chatOrder = [
-      (widget.messageType == 'text') ? chatBubble() : (widget.messageType == 'audio') ? audioBubble() : (widget.messageType == 'image') ? photoBubble() : (widget.messageType == 'file') ? fileBubble() : videoBubble(),
-      Text(widget.chatTime, style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer, fontSize: 8, fontFamily: 'Inter',),),
+      (widget.messageType == 'text') ? chatBubble() : (widget.messageType == 'audio') ? audioBubble() : (widget.messageType == 'image') ? photoBubble() : (widget.messageType == 'file') ? fileBubble() : (widget.messageType == 'link') ? linkBubble() : (widget.messageType == 'video') ? videoBubble() : notificationBubble(),
+      (widget.messageType == 'notification') ?  const SizedBox() : Text(widget.chatTime, style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer, fontSize: 8, fontFamily: 'Inter',),),
     ];
     List<Widget> reversedChatOrder = chatOrder.reversed.toList();
 
@@ -224,7 +226,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                 }
               },
               child: Row(
-                mainAxisAlignment: (widget.isSender) ? MainAxisAlignment.end : MainAxisAlignment.start,
+                mainAxisAlignment: (widget.messageType == 'notification') ? MainAxisAlignment.center : ((widget.isSender) ? MainAxisAlignment.end : MainAxisAlignment.start),
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: (widget.isSender) ? reversedChatOrder : chatOrder
               ),
@@ -232,6 +234,28 @@ class _ChatBubbleState extends State<ChatBubble> {
             chatBubbleOptions(),
           ],
         )
+    );
+  }
+
+  Widget notificationBubble() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: const Color(0xFF303437),
+          borderRadius: BorderRadius.circular(12), // Adjust the value for the desired curve
+        ),
+        child: Text(
+          widget.message ?? '',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSecondaryContainer,
+            fontSize: 8,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ),
     );
   }
 
@@ -256,19 +280,20 @@ class _ChatBubbleState extends State<ChatBubble> {
           textStyle: const TextStyle(
               color: Colors.white,
               fontSize: 12,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w400
+              // fontFamily: 'Inter',
+              // fontWeight: FontWeight.w400
           ),
           userName: (widget.isGroup && !widget.isSender) ? widget.senderName : null,
           userNameTextStyle: TextStyle(
               color: Theme.of(context).colorScheme.onSecondaryContainer,
-              fontSize: 12,
+              fontSize: 10,
               fontFamily: 'Inter',
               fontWeight: FontWeight.w400
           ),
           seen: widget.isSeen,
           sent: widget.isSent,
           delivered: true,
+          waiting: false,
           chatId: widget.chatId
         ),
         Visibility(
@@ -305,7 +330,8 @@ class _ChatBubbleState extends State<ChatBubble> {
           sent: widget.isSent,
           chatId: widget.chatId,
           senderName: (widget.isGroup && !widget.isSender) ? widget.senderName : null,
-          delivered: true,
+          delivered: widget.isDelivered,
+          waiting: true,
           textStyle: const TextStyle(
               color: Colors.white,
               fontSize: 6,
@@ -353,7 +379,8 @@ class _ChatBubbleState extends State<ChatBubble> {
               : const Color(0xFF303437),
           seen: widget.isSeen,
           sent: widget.isSent,
-          delivered: true,
+          delivered: widget.isDelivered,
+          waiting: true,
           chatId: widget.chatId
         ),
         Visibility(
@@ -381,7 +408,8 @@ class _ChatBubbleState extends State<ChatBubble> {
           fileLogo: widget.fileLogo,
           seen: widget.isSeen,
           sent: widget.isSent,
-          delivered: true,
+          delivered: widget.isDelivered,
+          waiting: true,
           chatId: widget.chatId,
           size: widget.size,
           tail: widget.hasDifferentSender || widget.isNewDay ? true : false,
@@ -414,7 +442,8 @@ class _ChatBubbleState extends State<ChatBubble> {
           senderName: widget.senderName,
           seen: widget.isSeen,
           sent: widget.isSent,
-          delivered: true,
+          delivered: widget.isDelivered,
+          waiting: true,
           chatId: widget.chatId,
           video: widget.file,
           bubbleRadius: 6,
@@ -440,6 +469,60 @@ class _ChatBubbleState extends State<ChatBubble> {
     );
   }
 
+  Widget linkBubble() {
+    return Stack(
+      children: [
+        BubbleSpecialLink(
+            constraints: const BoxConstraints(
+                maxWidth: 200,
+                minHeight: 20
+            ),
+            text: widget.message ?? '',
+            tail: widget.hasDifferentSender || widget.isNewDay ? true : false,
+            isSender: widget.isSender,
+            color: (widget.isSender)
+                ? (widget.isChatSelected && widget.numberOfSelectedBubbles > 0)
+                ? const Color(0xFFc0b5f9)
+                : const Color(0xFF5538EE)
+                : (widget.isChatSelected && widget.numberOfSelectedBubbles > 0)
+                ? const Color(0xFFafb4b9)
+                : const Color(0xFF303437),
+            textStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400
+            ),
+            userName: (widget.isGroup && !widget.isSender)
+                ? widget.senderName
+                : null,
+            userNameTextStyle: TextStyle(
+                color: Theme
+                    .of(context)
+                    .colorScheme
+                    .onSecondaryContainer,
+                fontSize: 12,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400
+            ),
+            seen: widget.isSeen,
+            sent: widget.isSent,
+            delivered: widget.isDelivered,
+            waiting: true,
+            chatId: widget.chatId
+        ),
+        Visibility(
+          visible: isStarred,
+          child: Positioned(
+              left: (widget.isSender) ? 6 : null,
+              right: (widget.isSender) ? null : 6,
+              child: const Icon(Icons.star, size: 10, color: Colors.grey,)
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget chatBubbleOptions () {
     return Visibility(
       visible: (widget.isChatSelected && widget.numberOfSelectedBubbles < 2),
@@ -458,7 +541,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                 if (widget.isChatSelected) {
                   widget.increaseDecreaseNumberOfSelectedBubbles('decrease');
                 }
-                FlutterClipboard.copy(((widget.messageType == 'text') ? widget.message : widget.fileName) ?? '');
+                FlutterClipboard.copy(((widget.messageType == 'text' || widget.messageType == 'link') ? widget.message : widget.fileName) ?? '');
                 widget.changeIsChatSelected();
                 widget.showCopyMessage();
               },

@@ -74,11 +74,15 @@ dependencies:
   image: ^4.2.0
   uuid: ^4.4.2
   isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
   jwt_decoder: ^2.0.1
   shimmer: ^3.0.0
   google_sign_in: ^6.2.1
-  crypto: ^3.0.5
   flutter_dotenv: ^5.1.0
+  url_launcher: ^6.3.0
+  connectivity_plus: ^6.0.5
+  socket_io_client: ^3.0.0
+  flutter_background_service: ^5.0.10
 
 dependency_overrides:
   js: ^0.7.1
@@ -86,6 +90,8 @@ dependency_overrides:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  isar_generator: ^3.1.0+1
+  build_runner: any
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

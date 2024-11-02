@@ -15,6 +15,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lottie/lottie.dart';
 
 import '../Components/Utilities/BackendUtilities/profile_user.dart';
+import '../Components/Utilities/SqfliteHelperClasses/initialize_database.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -55,6 +56,10 @@ class _SignupPageState extends State<SignupPage> {
     setState(() {
       progressVisible = !progressVisible;
     });
+  }
+
+  Future<void> initializeDatabase() async {
+    await DatabaseProvider().database;
   }
 
   void validateEmailAddress() {
@@ -156,6 +161,7 @@ class _SignupPageState extends State<SignupPage> {
       await storeUserDetailsSecureStorage(userDetails['accessToken'], userDetails['userID']);
       updateProgressVisible();
       if (mounted) {
+        initializeDatabase();
         context.go('/homepage');
       }
     } else{

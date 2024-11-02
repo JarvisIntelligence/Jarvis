@@ -3,7 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jarvis_app/Components/Utilities/BackendUtilities/send_receive_messages.dart';
+import 'package:jarvis_app/Components/Utilities/SqfliteHelperClasses/chat_list_database_helper.dart';
 import 'package:jarvis_app/Components/recent_list_chat.dart';
+import 'package:jarvis_app/Components/screen_loader.dart';
 import 'package:jarvis_app/Components/textfield.dart';
 import 'package:lottie/lottie.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -11,7 +14,9 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:sqflite/sqflite.dart';
 import '../Components/Utilities/BackendUtilities/friends.dart';
+import '../Components/Utilities/BackendUtilities/profile_user.dart';
 import '../Components/Utilities/SqfliteHelperClasses/contact_list_database_helper.dart';
+import '../Components/Utilities/extras.dart';
 import '../Components/cache_image.dart';
 import 'package:uuid/uuid.dart';
 
@@ -49,457 +54,10 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
       initialPage: 1
   );
 
-  // List<Map<String, dynamic>> userContactList = [
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/32.jpg',
-  //     'userImage2': '',
-  //     'name': 'Stephen Reed',
-  //     'groupImage': '',
-  //     'id': '1',
-  //     'userBio': 'Loves outdoor adventures and a good cup of coffee.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/44.jpg',
-  //     'userImage2': '',
-  //     'name': 'Maria Garcia',
-  //     'groupImage': '',
-  //     'id': '2',
-  //     'userBio': 'Avid reader and aspiring author.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "2",
-  //     'isGroup': true,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/20.jpg',
-  //     'userImage2': 'https://randomuser.me/api/portraits/women/20.jpg',
-  //     'name': 'James & Maria',
-  //     'groupImage': '',
-  //     'id': '3',
-  //     'userBio': 'A small group of close friends who love to hang out and have fun.'
-  //   },
-  //   {
-  //     'userImage3': 'https://randomuser.me/api/portraits/men/16.jpg',
-  //     'numberOfUsers': "3",
-  //     'isGroup': true,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/36.jpg',
-  //     'userImage2': 'https://randomuser.me/api/portraits/men/27.jpg',
-  //     'name': 'Project Team',
-  //     'groupImage': '',
-  //     'id': '4',
-  //     'userBio': 'Dedicated team working on innovative projects together.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/12.jpg',
-  //     'userImage2': '',
-  //     'name': 'Robert Brown',
-  //     'groupImage': '',
-  //     'id': '5',
-  //     'userBio': 'Tech enthusiast with a passion for coding.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/15.jpg',
-  //     'userImage2': '',
-  //     'name': 'Linda Davis',
-  //     'groupImage': '',
-  //     'id': '6',
-  //     'userBio': 'Loves cooking and exploring new recipes.'
-  //   },
-  //   {
-  //     'userImage3': 'https://randomuser.me/api/portraits/women/22.jpg',
-  //     'numberOfUsers': "3",
-  //     'isGroup': true,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/18.jpg',
-  //     'userImage2': 'https://randomuser.me/api/portraits/women/19.jpg',
-  //     'name': 'Marketing Team',
-  //     'groupImage': 'https://picsum.photos/150',
-  //     'id': '7',
-  //     'userBio': 'Creative and energetic team driving the company’s marketing efforts.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/23.jpg',
-  //     'userImage2': '',
-  //     'name': 'Barbara Martinez',
-  //     'groupImage': '',
-  //     'id': '8',
-  //     'userBio': 'Fitness enthusiast who loves to stay active.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "2",
-  //     'isGroup': true,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/24.jpg',
-  //     'userImage2': 'https://randomuser.me/api/portraits/women/22.jpg',
-  //     'name': 'Paul & Susan',
-  //     'groupImage': 'https://picsum.photos/150',
-  //     'id': '9',
-  //     'userBio': 'Dynamic couple who enjoy exploring new cultures and cuisines.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/42.jpg',
-  //     'userImage2': '',
-  //     'name': 'Susan Taylor',
-  //     'groupImage': '',
-  //     'id': '10',
-  //     'userBio': 'Artist with a passion for painting and design.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/35.jpg',
-  //     'userImage2': '',
-  //     'name': 'Kevin Wilson',
-  //     'groupImage': '',
-  //     'id': '11',
-  //     'userBio': 'Music lover and guitar player.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/30.jpg',
-  //     'userImage2': '',
-  //     'name': 'Sophia Moore',
-  //     'groupImage': '',
-  //     'id': '12',
-  //     'userBio': 'Graphic designer with a creative flair.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/22.jpg',
-  //     'userImage2': '',
-  //     'name': 'Michael Johnson',
-  //     'groupImage': '',
-  //     'id': '13',
-  //     'userBio': 'Entrepreneur and startup founder.'
-  //   },
-  //   {
-  //     'userImage3': 'https://randomuser.me/api/portraits/women/30.jpg',
-  //     'numberOfUsers': "4",
-  //     'isGroup': true,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/22.jpg',
-  //     'userImage2': 'https://randomuser.me/api/portraits/men/23.jpg',
-  //     'name': 'Design Team',
-  //     'groupImage': 'https://picsum.photos/150',
-  //     'id': '14',
-  //     'userBio': 'Innovative team creating stunning visual designs.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/32.jpg',
-  //     'userImage2': '',
-  //     'name': 'Olivia Taylor',
-  //     'groupImage': '',
-  //     'id': '15',
-  //     'userBio': 'Fashionista with a passion for trends.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/44.jpg',
-  //     'userImage2': '',
-  //     'name': 'William Miller',
-  //     'groupImage': '',
-  //     'id': '16',
-  //     'userBio': 'Sports fan and amateur athlete.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "2",
-  //     'isGroup': true,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/40.jpg',
-  //     'userImage2': 'https://randomuser.me/api/portraits/men/36.jpg',
-  //     'name': 'Friends Forever',
-  //     'groupImage': '',
-  //     'id': '17',
-  //     'userBio': 'Best friends since childhood, inseparable and adventurous.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/28.jpg',
-  //     'userImage2': '',
-  //     'name': 'Emily Harris',
-  //     'groupImage': '',
-  //     'id': '18',
-  //     'userBio': 'Loves hiking and being in nature.'
-  //   },
-  //   {
-  //     'userImage3': 'https://randomuser.me/api/portraits/men/33.jpg',
-  //     'numberOfUsers': "4",
-  //     'isGroup': true,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/35.jpg',
-  //     'userImage2': 'https://randomuser.me/api/portraits/men/26.jpg',
-  //     'name': 'Tech Innovators',
-  //     'groupImage': 'https://picsum.photos/150',
-  //     'id': '19',
-  //     'userBio': 'Forward-thinking group focused on tech advancements.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/19.jpg',
-  //     'userImage2': '',
-  //     'name': 'James Anderson',
-  //     'groupImage': '',
-  //     'id': '20',
-  //     'userBio': 'Travel enthusiast with a love for photography.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/29.jpg',
-  //     'userImage2': '',
-  //     'name': 'Alice Campbell',
-  //     'groupImage': '',
-  //     'id': '21',
-  //     'userBio': 'Avid gamer and technology geek.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/30.jpg',
-  //     'userImage2': '',
-  //     'name': 'Nathan Green',
-  //     'groupImage': '',
-  //     'id': '22',
-  //     'userBio': 'Fitness trainer and health advocate.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/26.jpg',
-  //     'userImage2': '',
-  //     'name': 'Rebecca Martinez',
-  //     'groupImage': '',
-  //     'id': '23',
-  //     'userBio': 'Creative writer with a passion for storytelling.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/34.jpg',
-  //     'userImage2': '',
-  //     'name': 'Daniel Wilson',
-  //     'groupImage': '',
-  //     'id': '24',
-  //     'userBio': 'Entrepreneur with a focus on startups.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "2",
-  //     'isGroup': true,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/32.jpg',
-  //     'userImage2': 'https://randomuser.me/api/portraits/men/31.jpg',
-  //     'name': 'Book Club',
-  //     'groupImage': 'https://picsum.photos/150',
-  //     'id': '25',
-  //     'userBio': 'Book lovers who meet regularly to discuss their reads.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/40.jpg',
-  //     'userImage2': '',
-  //     'name': 'Sophia Adams',
-  //     'groupImage': '',
-  //     'id': '26',
-  //     'userBio': 'Foodie with a passion for baking.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/40.jpg',
-  //     'userImage2': '',
-  //     'name': 'Jack Thompson',
-  //     'groupImage': '',
-  //     'id': '27',
-  //     'userBio': 'Outdoor sports enthusiast and photographer.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/35.jpg',
-  //     'userImage2': '',
-  //     'name': 'Ella Johnson',
-  //     'groupImage': '',
-  //     'id': '28',
-  //     'userBio': 'Fashion designer with a flair for elegance.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/38.jpg',
-  //     'userImage2': '',
-  //     'name': 'Alexander Martinez',
-  //     'groupImage': '',
-  //     'id': '29',
-  //     'userBio': 'Music producer with a love for jazz.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/21.jpg',
-  //     'userImage2': '',
-  //     'name': 'Natalie Green',
-  //     'groupImage': '',
-  //     'id': '30',
-  //     'userBio': 'Art curator and gallery manager.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/28.jpg',
-  //     'userImage2': '',
-  //     'name': 'Lucas Harris',
-  //     'groupImage': '',
-  //     'id': '31',
-  //     'userBio': 'Game developer with a passion for VR technology.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/25.jpg',
-  //     'userImage2': '',
-  //     'name': 'Charlotte Wilson',
-  //     'groupImage': '',
-  //     'id': '32',
-  //     'userBio': 'Dance instructor and choreographer.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/25.jpg',
-  //     'userImage2': '',
-  //     'name': 'Matthew Lewis',
-  //     'groupImage': '',
-  //     'id': '33',
-  //     'userBio': 'Automotive engineer with a love for classic cars.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "2",
-  //     'isGroup': true,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/20.jpg',
-  //     'userImage2': 'https://randomuser.me/api/portraits/men/33.jpg',
-  //     'name': 'Adventure Seekers',
-  //     'groupImage': 'https://picsum.photos/150',
-  //     'id': '34',
-  //     'userBio': 'Group of friends who love exploring new places.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/22.jpg',
-  //     'userImage2': '',
-  //     'name': 'Zoe Davis',
-  //     'groupImage': '',
-  //     'id': '35',
-  //     'userBio': 'Wellness coach and motivational speaker.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/26.jpg',
-  //     'userImage2': '',
-  //     'name': 'Ryan Johnson',
-  //     'groupImage': '',
-  //     'id': '36',
-  //     'userBio': 'Travel photographer with a love for landscapes.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/34.jpg',
-  //     'userImage2': '',
-  //     'name': 'Ava Scott',
-  //     'groupImage': '',
-  //     'id': '37',
-  //     'userBio': 'Literary critic with a passion for poetry.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/31.jpg',
-  //     'userImage2': '',
-  //     'name': 'David Clark',
-  //     'groupImage': '',
-  //     'id': '38',
-  //     'userBio': 'Software developer with an interest in AI.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/women/24.jpg',
-  //     'userImage2': '',
-  //     'name': 'Hannah Lewis',
-  //     'groupImage': '',
-  //     'id': '39',
-  //     'userBio': 'Passionate about sustainable living and environmentalism.'
-  //   },
-  //   {
-  //     'userImage3': '',
-  //     'numberOfUsers': "1",
-  //     'isGroup': false,
-  //     'userImage': 'https://randomuser.me/api/portraits/men/29.jpg',
-  //     'userImage2': '',
-  //     'name': 'Lucas Martin',
-  //     'groupImage': '',
-  //     'id': '40',
-  //     'userBio': 'Startup founder and tech innovator.'
-  //   }
-  // ];
-
   List<Map<String, dynamic>> userContactList = [];
   List<Map<String, dynamic>> filteredUserRecentsList = [];
   List<Map<String, dynamic>> previousUserRecentsList = [];
-  List<Map<String, dynamic>> newGroupUserList = [{
-    'name': '(You)',
-    'profileImage': 'https://randomuser.me/api/portraits/lego/6.jpg',
-    'userIndex': 0
-  }];
+  List<Map<String, dynamic>> newGroupUserList = [];
 
   // Map to track user add selection state of each user in a new group
   Map<int, bool> isUserSelectedMap = {};
@@ -507,7 +65,8 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
   @override
   void initState() {
     super.initState();
-    _initializeDatabase();
+    // _initializeDatabase();
+    initNewGroupUserList();
     readContactListFromStorage();
     _searchFocusNode.addListener(() {setState(() {});});
     _groupNameController.addListener(updateGroupNameInputWidth);
@@ -529,17 +88,70 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
     db = await ContactListDatabaseHelper().database;
   }
 
+  Future<void> initNewGroupUserList() async {
+    String userId = await Extras().retrieveUserID();
+    Map<String, dynamic> profileDetails = await ProfileUser().retrieveProfileDetails(
+      await Extras().retrieveJWT(),
+      userId,
+      false,
+    );
+    newGroupUserList = [{
+      'name': '(You)',
+      'profileImage': profileDetails['profile']['profilepicture'] ?? '',
+      'userId': userId,
+      'userIndex': 0
+    }];
+    // setState(() {
+    //   newGroupUserList = [{
+    //     'name': '(You)',
+    //     'profileImage': profileDetails['profile']['profilepicture'] ?? '',
+    //     'userId': userId,
+    //     'userIndex': 0
+    //   }];
+    // });
+  }
 
   Future<void> readContactListFromStorage() async {
-    final List<Map<String, dynamic>> contactList = await ContactListDatabaseHelper().getAllContacts();
-    if (contactList.isNotEmpty){
+    final contactList = await ContactListDatabaseHelper().getAllContacts();
+
+    if (contactList.isEmpty) {
+      await retrieveAndStoreContactListFromOnline();
+      final updatedContactList = await ContactListDatabaseHelper().getAllContacts();
       setState(() {
-        userContactList = contactList;
+        if(updatedContactList.isNotEmpty){
+          userContactList = updatedContactList;
+        } else {
+          userContactList = [];
+        }
       });
     } else {
       setState(() {
-        userContactList = [];
+        userContactList = contactList;
       });
+    }
+  }
+
+  Future<void> retrieveAndStoreContactListFromOnline() async {
+    String userId = await Extras().retrieveUserID();
+    Map<String, dynamic> friends = await Friends().retrieveFriendList(await Extras().retrieveJWT());
+    List<dynamic> conversations = await SendReceiveMessages().retrieveConversations(await Extras().retrieveJWT(), userId);
+    if(friends.isEmpty){
+      return;
+    }
+    for (var friend in friends['friends']) {
+    String friendId = friend['id'] ?? '';
+    String username = friend['username'] ?? '';
+    String conversationId = '';
+
+    for (var conversation in conversations) {
+      List<dynamic> participants = conversation['participants'];
+      if (participants.contains(userId) && participants.contains(friendId) && participants.length == 2) {
+        conversationId = conversation['_id'];
+        break;
+      }
+    }
+
+    await addingContactToLocalDatabase(friendId, username, conversationId);
     }
   }
 
@@ -573,7 +185,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
     });
   }
 
-  void addingUsersToNewGroup(String name, String profileImage, int userIndex) {
+  void addingUsersToNewGroup(String name, String profileImage, int userIndex, String userId) {
     if (newGroupUserList.length >= maxGroupSize){
       InAppNotifications.show(
         description: "Can't add more users to the group",
@@ -581,8 +193,9 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
       );
     } else {
       Map<String, dynamic> newUser = {
-        'name': name,
+        'name': Extras().capitalize(name),
         'profileImage': profileImage,
+        'userId': userId,
         'userIndex': userIndex
       };
       setState(() {
@@ -607,12 +220,89 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
     });
   }
 
-  Future<void> addToContactList(String userName, String jwtToken) async {
+  Future<void> addingGroupContact() async {
+    List<String> participantsID = [];
+    String myId = await Extras().retrieveUserID();
+    for (var newGroupUser in newGroupUserList) {
+      if(newGroupUser['userId'] != myId){
+        participantsID.add(newGroupUser['userId']);
+      }
+    }
+    String conversationId = await SendReceiveMessages().createConversationBackend(participantsID, await Extras().retrieveJWT());
+    addingGroupContactToLocalDatabase(participantsID, conversationId);
+  }
 
+  Future<void> addingGroupContactToLocalDatabase(
+      List<String> participantsId,
+      String conversationId
+      ) async {
+    List<String> images = ['', '', ''];
+    List<String> participantNames = [];
+
+    participantsId.insert(0, await Extras().retrieveUserID());
+
+    for (int i = 0; i < participantsId.length; i++) {
+      String friendID = participantsId[i];
+      if (friendID.isNotEmpty) {
+        await SendReceiveMessages()
+            .retrieveFriendProfile(friendID, await Extras().retrieveJWT())
+            .then((profile) {
+          String profileImage = profile['profileImage'] ?? '';
+          String fullName = profile['chatName'] ?? '';
+
+          // Collect profile images for the first three participants
+          if (i < 3) {
+            images[i] = profileImage;
+          }
+          // Collect participant names
+          participantNames.add(fullName.split(' ').first);
+        });
+      }
+    }
+
+    String displayedNames;
+    if (participantNames.length > 3) {
+      displayedNames = '${participantNames[0]}, ${participantNames[1]}, ${participantNames[2]}, and others';
+    } else if (participantNames.length == 3) {
+      displayedNames = '${participantNames[0]}, ${participantNames[1]}, and ${participantNames[2]}';
+    } else if (participantNames.length == 2) {
+      displayedNames = '${participantNames[0]} and ${participantNames[1]}';
+    } else {
+      displayedNames = participantNames.join(', ');
+    }
+
+    // Create the user contact entry
+    Map<String, dynamic> userContact = {
+      'userImage3': images[2],
+      'numberOfUsers': participantsId.length.toString(),
+      'isGroup': true,
+      'userImage': images[0],
+      'userImage2': images[1],
+      'name': displayedNames.toLowerCase(),
+      'userName': conversationId,
+      'groupImage': '',
+      'conversationId': conversationId,
+      'userBio': 'A place for us to stay connected!',
+      'participantsId': participantsId.join(',')
+    };
+
+    // Format for saving to database, setting `isGroup` as an integer
+    Map<String, dynamic> userContactDatabase = {
+      ...userContact,
+      'isGroup': 1,  // 1 indicates true for `isGroup` in database
+    };
+
+    // Update user contact list and save to database
+    setState(() {
+      userContactList = [...userContactList, userContact];
+    });
+    saveContactToStorage(userContactDatabase);
+    resetGroupSelection(false);
+  }
+
+
+  Future<void> addingNormalContact(String userName, String jwtToken) async {
     final bool userExists = userContactList.any((contact) => (contact['name'] as String).toLowerCase() == userName.toLowerCase());
-
-    const uuid = Uuid();
-    String uniqueId = uuid.v4();
 
     if (userExists) {
       InAppNotifications.show(
@@ -621,48 +311,53 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
       );
       return;
     }
-    bool isSavedOnline = await Friends().addUserToFriendList(jwtToken, userName);
-    if (isSavedOnline) {
-      final List<Map<String, dynamic>> copyUserContactList = [...userContactList];
-      Map<String, dynamic> userContact = {
-        'userImage3': '',
-        'numberOfUsers': "1",
-        'isGroup': false,
-        'userImage': 'https://randomuser.me/api/portraits/men/32.jpg',
-        'userImage2': '',
-        'name': userName.toLowerCase(),
-        'groupImage': '',
-        'id': uniqueId.toString(),
-        'userBio': 'I love Jollof rice and chicken so much that it can kill me'
-      };
-      Map<String, dynamic> userContactDatabase = {
-        'userImage3': '',
-        'numberOfUsers': "1",
-        'isGroup': 0,
-        'userImage': 'https://randomuser.me/api/portraits/men/32.jpg',
-        'userImage2': '',
-        'name': userName,
-        'groupImage': '',
-        'id': uniqueId.toString(),
-        'userBio': 'I love Jollof rice and chicken so much that it can kill me'
-      };
-      copyUserContactList.add(userContact);
-      setState(() {
-        userContactList = copyUserContactList;
-      });
-      saveContactToStorage(userContactDatabase);
-      resetContactSelection();
-    }
+    String friendID = await Friends().addUserToFriendList(jwtToken, userName);
+    String? conversationId = await ChatListDatabaseHelper().getConversationIdByUserName(userName);
+    conversationId ??= await SendReceiveMessages().createConversationBackend([friendID], await Extras().retrieveJWT());
+    addingContactToLocalDatabase(friendID, userName, conversationId);
   }
 
-  /// This has to happen only once per app
+  Future<void> addingContactToLocalDatabase(
+      String friendID, String userName, String conversationId
+      ) async {
+    if (friendID.isEmpty) return;
+    final jwt = await Extras().retrieveJWT();
+    final profile = await SendReceiveMessages().retrieveFriendProfile(friendID, jwt);
+    final profileImage = profile['profileImage'] ?? '';
+    final bio = profile['bio'] ?? '';
+    final chatName = profile['chatName']?.toLowerCase() ?? '';
+    final formattedUserName = userName.toLowerCase();
+    final participantsId = [friendID];
+
+    final userContact = {
+      'userImage3': '',
+      'numberOfUsers': (participantsId.length - 1).toString(),
+      'isGroup': false,
+      'userImage': profileImage,
+      'userImage2': '',
+      'name': chatName,
+      'userName': formattedUserName,
+      'groupImage': '',
+      'conversationId': conversationId,
+      'userBio': bio,
+      'participantsId': participantsId.join(',')
+    };
+    setState(() {
+      userContactList = [...userContactList, userContact];
+    });
+    saveContactToStorage({
+      ...userContact,
+      'isGroup': 0, // Ensuring 'isGroup' is stored as an integer
+    });
+    resetContactSelection();
+  }
+
+
   _initSpeech() async {
     _speechEnabled = await _speechToText.initialize();
     setState(() {});
   }
 
-  /// This is the callback that the SpeechToText plugin calls when
-  /// the platform returns recognized words.
   void onSpeechResult(SpeechRecognitionResult result) {
     setState(() {
       _lastWords = result.recognizedWords;
@@ -700,15 +395,13 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
     });
   }
 
-  void resetGroupSelection() {
+  void resetGroupSelection(bool resetContactList) {
+    initNewGroupUserList();
     setState(() {
       isAddingGroup = !isAddingGroup;
-      userContactList = previousUserRecentsList;
-      newGroupUserList = [{
-        'name': '(You)',
-        'profileImage': 'https://randomuser.me/api/portraits/lego/6.jpg',
-        'userIndex': 0
-      }];
+      if(resetContactList){
+        userContactList = previousUserRecentsList;
+      }
       newGroupName = 'Group Name';
     });
     _controller.jumpToPage(
@@ -722,23 +415,6 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
     _newContactFocusNode.unfocus();
   }
 
-  Future<String> retrieveJWT() async {
-    String? jsonString = await storage.read(key: 'user_data');
-    if (jsonString != null) {
-      Map<String, dynamic> userLoggedInData = jsonDecode(jsonString);
-      return userLoggedInData['jwt_token'];
-    }
-    return '';
-  }
-
-  Future<String> retrieveUsername() async {
-    String? jsonString = await storage.read(key: 'user_data');
-    if (jsonString != null) {
-      Map<String, dynamic> userLoggedInData = jsonDecode(jsonString);
-      return userLoggedInData['userName'];
-    }
-    return '';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -779,7 +455,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                 ],
               ),
             ),
-            loadingAnimation()
+            LoadingAnimation(progressVisible: progressVisible)
           ],
         )
     );
@@ -939,7 +615,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                 );
               } else {
                 InAppNotifications.show(
-                  description: "Cannot create a group with an empty contact list. Add a few friend first",
+                  description: "Cannot create a group with an empty contact list. Add a few friends first.",
                   onTap: () {}
                 );
               }
@@ -989,6 +665,8 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
       return contactList.asMap().entries.map((entry) {
         final int userIndex = entry.key + 1;
         final entryValue = entry.value;
+        final participantsId = entryValue['participantsId'];
+        final participantsIdString = participantsId is String ? participantsId : participantsId.join(",");
         return RecentListChat(
           isGroup: entryValue['isGroup'],
           userImage: entryValue['userImage'],
@@ -996,13 +674,15 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
           userImage3: entryValue['userImage3'],
           numberOfUsers: entryValue['numberOfUsers'],
           name: entryValue['name'],
+          userName: entryValue['userName'],
           groupImage: entryValue['groupImage'],
           isAddingGroup: isAddingGroup,
           addingUsersToNewGroup: addingUsersToNewGroup,
           isUserSelected: isUserSelectedMap[userIndex] ?? false,
           changeIsUserSelected: () => changeIsUserSelected(userIndex),
           userIndex: userIndex,
-          id: entryValue['id'],
+          conversationId: entryValue['conversationId'],
+          participantsId: participantsIdString,
           userBio: entryValue['userBio'],
           isPinned: entryValue['isPinned'] == 1,
           isArchived: entryValue['isArchived'] == 1
@@ -1151,7 +831,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                 children: [
                   IconButton(
                       onPressed: () {
-                        resetGroupSelection();
+                        resetGroupSelection(true);
                       },
                       icon: Icon(
                         Icons.arrow_back,
@@ -1199,7 +879,9 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                   child: TextButton(
                     onPressed: () {
                       if (newGroupUserList.length > 1){
-
+                        updateProgressVisible();
+                        addingGroupContact();
+                        updateProgressVisible();
                       } else {
                         InAppNotifications.show(
                             description: 'You cannot create a group with just you',
@@ -1242,7 +924,7 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
           Row(
             children: [
               IconButton(
-                  onPressed: () {
+                  onPressed: () async {
                     resetContactSelection();
                   },
                   icon: Icon(
@@ -1271,23 +953,20 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
                       FocusManager.instance.primaryFocus?.unfocus();
                       updateProgressVisible();
                       if(_usernameController.text.isNotEmpty){
-                        String username = await retrieveUsername();
-                        if(_usernameController.text == username){
+                        String username = await Extras().retrieveUsername();
+                        if((_usernameController.text).toLowerCase() == username.toLowerCase()){
                           InAppNotifications.show(
                               description: "Cannot add your username as a friend",
                               onTap: () {}
-                          );                          return;
+                          );
+                          updateProgressVisible();
+                          return;
                         }
-                        String jwtToken = await retrieveJWT();
+                        String jwtToken = await Extras().retrieveJWT();
                         if(jwtToken != '') {
-                          bool doesUserExist = await Friends().checkIfUserExists(jwtToken, _usernameController.text);
+                          bool doesUserExist = await Friends().checkIfUserExists(jwtToken, _usernameController.text.toLowerCase());
                           if(doesUserExist){
-                            await addToContactList(_usernameController.text, jwtToken);
-                          } else {
-                            InAppNotifications.show(
-                                description: 'User does not exist',
-                                onTap: () {}
-                            );
+                            await addingNormalContact(_usernameController.text.toLowerCase(), jwtToken);
                           }
                         }
                       } else{
@@ -1335,20 +1014,6 @@ class _AddNewUsersPageState extends State<AddNewUsersPage> {
           const SizedBox(height: 10,),
         ],
       ),
-    );
-  }
-
-  Widget loadingAnimation() {
-    return Visibility(
-        visible: progressVisible,
-        child: Container(
-          color: Colors.black87,
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          child: Center(
-            child: Lottie.asset('assets/lottie_animations/loading_animation.json', width: 80),
-          ),
-        )
     );
   }
 }

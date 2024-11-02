@@ -5,14 +5,22 @@ import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:isar/isar.dart';
 import 'package:jarvis_app/Components/Utilities/BackendUtilities/friends.dart';
+import 'package:jarvis_app/Components/Utilities/contact_list.dart';
 import 'package:jarvis_app/Components/textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:crypto/crypto.dart';
+import 'package:provider/provider.dart';
+import '../Components/ChangeNotifiers/user_chat_list_change_notifier.dart';
 import '../Components/Utilities/BackendUtilities/profile_user.dart';
 import '../Components/Utilities/BackendUtilities/register_login_user.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../Components/Utilities/BackendUtilities/send_receive_messages.dart';
+import '../Components/Utilities/SqfliteHelperClasses/contact_list_database_helper.dart';
+import '../Components/Utilities/SqfliteHelperClasses/initialize_database.dart';
+import '../Components/Utilities/extras.dart';
 import '../Components/screen_loader.dart';
 
 class LoginPage extends StatefulWidget {
@@ -36,6 +44,11 @@ class _LoginPageState extends State<LoginPage> {
   final _controller = PageController(
       initialPage: 0
   );
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -72,14 +85,16 @@ class _LoginPageState extends State<LoginPage> {
     userLogInJsonData['password'] = _passwordController.text;
 
     Map<String, dynamic>? userDetails = await RegisterLoginUser().logInUser(userLogInJsonData, false);
-    String accessToken = userDetails?['accessToken'];
-    String userID = userDetails?['userID'];
+    if(userDetails == null){
+      updateProgressVisible();
+      return;
+    }
+    String accessToken = userDetails['accessToken'];
+    String userID = userDetails['userID'];
 
     await storeUserDetailsSecureStorage(accessToken, userID);
     updateProgressVisible();
-    if (mounted) {
-      context.go('/homepage');
-    }
+    context.go('/homepage');
   }
 
   Future<bool> checkInternetConnection() async {

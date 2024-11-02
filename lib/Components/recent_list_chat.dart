@@ -1,33 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'Utilities/extras.dart';
 import 'cache_image.dart';
 
 class RecentListChat extends StatefulWidget {
   const RecentListChat({super.key, required this.isGroup, required this.userImage,
-    required this.userImage2, required this.name,
-    required this.id, required this.userImage3, required this.numberOfUsers,
+    required this.userImage2, required this.name, required this.userName,
+    required this.conversationId, required this.userImage3, required this.numberOfUsers,
     required this.groupImage, required this.isAddingGroup,
-    required this.addingUsersToNewGroup(String name, String profileImage, int userIndex),
+    required this.addingUsersToNewGroup(String name, String profileImage, int userIndex, String userId),
     required this.isUserSelected, required this.changeIsUserSelected,
-    required this.userIndex, required this.userBio, required this.isPinned, required this.isArchived
+    required this.userIndex, required this.userBio, required this.isPinned, required this.isArchived, required this.participantsId
   });
 
   final bool isGroup;
   final String userImage;
   final String userImage2;
   final String name;
-  final String id;
+  final String userName;
+  final String conversationId;
   final String numberOfUsers;
   final String userImage3;
   final String groupImage;
   final String userBio;
   final bool isAddingGroup;
-  final Function(String name, String profileImage, int userIndex) addingUsersToNewGroup;
+  final Function(String name, String profileImage, int userIndex, String userId) addingUsersToNewGroup;
   final Function() changeIsUserSelected;
   final bool isUserSelected;
   final int userIndex;
   final bool isPinned;
   final bool isArchived;
+  final String participantsId;
 
   @override
   State<RecentListChat> createState() => _RecentListChatState();
@@ -47,14 +50,15 @@ class _RecentListChatState extends State<RecentListChat> {
   }
 
   void startChat() {
+    String userName = (widget.userName == '') ? '_' : widget.userName;
     // Define the base path
-    String basePath = '/homepage/chat/${widget.name}/${widget.isGroup}';
+    String basePath = '/homepage/chat/${widget.name}/$userName/${widget.isGroup}';
     // Check conditions for encodedUserImage2 and encodedUserImage3
     String path;
     if (encodedUserImage2 == '') {
-      path = '$basePath/$encodedUserImage/_/${widget.id}';
+      path = '$basePath/$encodedUserImage/_/${widget.conversationId}';
     } else {
-      path = '$basePath/$encodedUserImage/$encodedUserImage2/${widget.id}';
+      path = '$basePath/$encodedUserImage/$encodedUserImage2/${widget.conversationId}';
     }
     // Append encodedUserImage3 if it's not empty
     if (encodedUserImage3 != '') {
@@ -63,7 +67,7 @@ class _RecentListChatState extends State<RecentListChat> {
       path = '$path/_';
     }
     // Append the number of users at the end of the path
-    path = '$path/${widget.numberOfUsers}/${widget.isPinned}/${widget.isArchived}';
+    path = '$path/${widget.numberOfUsers}/${widget.isPinned}/${widget.isArchived}/${widget.participantsId}';
     context.go(path);
   }
 
@@ -154,7 +158,7 @@ class _RecentListChatState extends State<RecentListChat> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(widget.name, style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
+                            Text(Extras().capitalize(widget.name), style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
                             SizedBox(
                               width: MediaQuery.of(context).size.width - 200,
                               child: Text(widget.userBio,
@@ -186,7 +190,7 @@ class _RecentListChatState extends State<RecentListChat> {
                           child: IconButton(
                             onPressed: () {
                               widget.changeIsUserSelected();
-                              widget.addingUsersToNewGroup(widget.name, widget.userImage, widget.userIndex);
+                              widget.addingUsersToNewGroup(widget.name, widget.userImage, widget.userIndex, widget.participantsId);
                             },
                             icon: const Icon(Icons.add),
                             color: Theme.of(context).colorScheme.scrim, // Icon color

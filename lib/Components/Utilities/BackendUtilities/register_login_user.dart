@@ -1,15 +1,25 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:jarvis_app/Components/Utilities/BackendUtilities/profile_user.dart';
+import 'package:jarvis_app/Components/Utilities/BackendUtilities/send_receive_messages.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
-
+import 'package:provider/provider.dart';
+import '../../../main.dart';
+import '../../ChangeNotifiers/user_chat_list_change_notifier.dart';
+import '../SqfliteHelperClasses/contact_list_database_helper.dart';
+import '../SqfliteHelperClasses/initialize_database.dart';
+import '../contact_list.dart';
+import '../extras.dart';
 
 class RegisterLoginUser {
   Future<Map<String, dynamic>> registerAndCreateProfile(Map<String, dynamic> jsonData) async {
-    const String registerUrl = 'https://jarvis-backend-tqdw.onrender.com/auth/register';
+    const String registerUrl = 'https://staging.jarvisintelligence.com/auth/register';
     const String profileUrl = 'https://jarvis-backend-tqdw.onrender.com/profile/create';
 
     String fullname = jsonData['fullname'];
@@ -60,7 +70,7 @@ class RegisterLoginUser {
         if (profileResponse.statusCode == 201) {
           // Profile creation successful
           InAppNotifications.show(
-            description: 'Account created successfully',
+            description: "Your account has been created! You're all set to go.",
             onTap: () {},
           );
           Map<String, dynamic> userDetails = {
@@ -116,11 +126,6 @@ class RegisterLoginUser {
           'userID': decodedToken['sub']['_id'],
           'accessToken': accessToken
         };
-        InAppNotifications.show(
-            description:
-            'You have successfully logged in',
-            onTap: () {}
-        );
         return userDetails;
       } else {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
@@ -155,17 +160,22 @@ class RegisterLoginUser {
       Map<String, dynamic> profileDetails = await ProfileUser().retrieveProfileDetails(userDetails?['accessToken'], userDetails?['userID'], true);
 
       if(profileDetails.isEmpty){
-        await RegisterLoginUser().createUserProfile(accessToken, googleDetails?['photoUrl']);
+        bool isSuccessful = await RegisterLoginUser().createUserProfile(accessToken, googleDetails?['photoUrl']);
+        if (!isSuccessful){
+          InAppNotifications.show(
+            description: "We couldn't create your profile. Please try again.",
+            onTap: () {},
+          );
+          return;
+        }
       }
 
       await storeUserDetailsSecureStorage(accessToken, userID);
-      if (context.mounted) {
-        context.go('/homepage');
-      }
+      context.go('/homepage');
     } catch (e) {
       InAppNotifications.show(
           description:
-          'An error occurred: $e',
+          "We couldn't complete your Google Sign-in. Please try again or check your connection.",
           onTap: (){}
       );
     } finally {
@@ -193,16 +203,15 @@ class RegisterLoginUser {
       }
     } catch(e) {
       InAppNotifications.show(
-        description: 'Profile creation failed.',
+        description: "We couldn't create your profile. Please try again.",
         onTap: () {},
       );
     }
-
     return false;
   }
 
   Future<Map<String, dynamic>?> logInUser(Map<String, dynamic> jsonData, bool isAutomaticLogin) async {
-    const String url = 'https://jarvis-backend-tqdw.onrender.com/auth/login';
+    const String url = 'https://staging.jarvisintelligence.com/auth/login';
 
     try {
       final response = await http.post(
@@ -223,7 +232,7 @@ class RegisterLoginUser {
           };
           InAppNotifications.show(
               description:
-              'Login successful',
+              "Welcome back! You've successfully logged in.",
               onTap: () {}
           );
           return userDetails;
@@ -250,5 +259,23 @@ class RegisterLoginUser {
       }
     }
     return null;
+  }
+
+  Future<void> logOutUser () async {
+    const storage = FlutterSecureStorage();
+    GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: dotenv.env['GOOGLE_CLIENT_ID']
+    );
+    await storage.delete(key:'user_data');
+    bool isSignedIn = await googleSignIn.isSignedIn();
+    if(isSignedIn){
+      await googleSignIn.signOut();
+    }
+    InAppNotifications.show(
+      description: 'Login session expired. Please log in again.',
+      onTap: () {},
+    );
+    await DatabaseProvider().closeDatabase();
+    router.go('/login');
   }
 }

@@ -4,6 +4,8 @@ import 'package:flutter_inapp_notifications/flutter_inapp_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:jarvis_app/Components/Utilities/BackendUtilities/register_login_user.dart';
+import 'package:jarvis_app/Components/Utilities/SqfliteHelperClasses/initialize_database.dart';
 
 class UserSettingsPage extends StatefulWidget {
   const UserSettingsPage({super.key});
@@ -31,6 +33,7 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
         onTap: () {}
     );
     if (mounted) {
+      await DatabaseProvider().closeDatabase();
       context.go('/login');
     }
   }

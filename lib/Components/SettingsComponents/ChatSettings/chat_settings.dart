@@ -197,6 +197,7 @@ class _ChatSettingsState extends State<ChatSettings> {
     return GestureDetector(
       onTap: function,
       child: Container(
+        color: Colors.transparent,
         padding: const EdgeInsets.only(bottom: 20, top: 20,),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,

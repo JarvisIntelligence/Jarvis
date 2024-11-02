@@ -4,18 +4,21 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:jarvis_app/Components/cache_image.dart';
 
+import 'Utilities/extras.dart';
+
 class HomeChat extends StatefulWidget {
   HomeChat({super.key,
     required this.notification, required this.userImage,
     required this.userImage2,
-    required this.name, required this.lastMessage,
+    required this.name, required this.userName, required this.lastMessage,
     required this.lastMessageTime, required this.isGroup,
-    required this.id, required this.userImage3,
+    required this.conversationId, required this.userImage3,
     required this.numberOfUsers, required this.groupImage,
     required this.increaseDecreaseNumberOfSelectedChats,
     required this.isPinned, required this.isArchived, required this.isChatSelected,
     required this.changeIsChatSelected, required this.addChatToDataMap,
-    required this.removeChatFromDataMap
+    required this.removeChatFromDataMap, required this.participantsId,
+    required this.encodedUserImage, required this.encodedUserImage2, required this.encodedUserImage3
   });
   
   final bool notification;
@@ -23,9 +26,10 @@ class HomeChat extends StatefulWidget {
   late String userImage;
   late String userImage2;
   final String name;
+  final String userName;
   final String lastMessage;
-  final DateTime lastMessageTime;
-  final String id;
+  final DateTime? lastMessageTime;
+  final String conversationId;
   final String userImage3;
   final String numberOfUsers;
   final String groupImage;
@@ -36,6 +40,10 @@ class HomeChat extends StatefulWidget {
   final Function() changeIsChatSelected;
   final Function() addChatToDataMap;
   final Function() removeChatFromDataMap;
+  final String participantsId;
+  final String encodedUserImage;
+  final String encodedUserImage2;
+  final String encodedUserImage3;
 
 
   @override
@@ -43,21 +51,24 @@ class HomeChat extends StatefulWidget {
 }
 
 class _HomeChatState extends State<HomeChat> {
-  late String encodedUserImage;
-  late String encodedUserImage2;
-  late String encodedUserImage3;
 
-  @override
-  void initState() {
-    super.initState();
-    encodedUserImage = Uri.encodeComponent(widget.userImage);
-    encodedUserImage2 = Uri.encodeComponent(widget.userImage2);
-    encodedUserImage3 = Uri.encodeComponent(widget.userImage3);
+  String getFormattedLastMessageTime(DateTime lastMessageTime) {
+    final now = DateTime.now();
+    final difference = now.difference(lastMessageTime).inDays;
+
+    if (difference == 0) {
+      return DateFormat('h:mm a').format(lastMessageTime);
+    } else if (difference == 1) {
+      return 'Yesterday';
+    } else {
+      return DateFormat('dd/MM/yyyy').format(lastMessageTime);
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
-    final String lastMessageTimeString = DateFormat('h:mm a').format(widget.lastMessageTime);
+    final String lastMessageTimeString = getFormattedLastMessageTime(widget.lastMessageTime!);
 
     // Split the last message if it's a group chat
     String senderName = '';
@@ -72,23 +83,24 @@ class _HomeChatState extends State<HomeChat> {
 
     return GestureDetector(
       onTap: () async {
+        String userName = (widget.userName == '') ? '_' : widget.userName;
         // Define the base path
-        String basePath = '/homepage/chat/${widget.name}/${widget.isGroup}';
+        String basePath = '/homepage/chat/${widget.name}/$userName/${widget.isGroup}';
         // Check conditions for encodedUserImage2 and encodedUserImage3
         String path;
-        if (encodedUserImage2 == '') {
-          path = '$basePath/$encodedUserImage/_/${widget.id}';
+        if (widget.encodedUserImage2 == '') {
+          path = '$basePath/${widget.encodedUserImage}/_/${widget.conversationId}';
         } else {
-          path = '$basePath/$encodedUserImage/$encodedUserImage2/${widget.id}';
+          path = '$basePath/${widget.encodedUserImage}/${widget.encodedUserImage2}/${widget.conversationId}';
         }
         // Append encodedUserImage3 if it's not empty
-        if (encodedUserImage3 != '') {
-          path = '$path/$encodedUserImage3';
+        if (widget.encodedUserImage3 != '') {
+          path = '$path/${widget.encodedUserImage3}';
         } else {
           path = '$path/_';
         }
         // Append the number of users, isPinned, and isArchived at the end of the path
-        path = '$path/${widget.numberOfUsers}/${widget.isPinned}/${widget.isArchived}';
+        path = '$path/${widget.numberOfUsers}/${widget.isPinned}/${widget.isArchived}/${widget.participantsId}';
         context.go(path);
       },
       onLongPress: () {
@@ -124,74 +136,74 @@ class _HomeChatState extends State<HomeChat> {
                         ),
                         const SizedBox(width: 10,),
                         (widget.isGroup)
-                            ? (widget.groupImage != '')
-                            ? (int.parse(widget.numberOfUsers) > 2)
-                            ? SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            clipBehavior: Clip.none,
-                            children: [
-                              Positioned(
-                                left: 23, // Third image position, slightly moved to the right
-                                child: CacheImage(
-                                    imageUrl: widget.userImage3, // Change this to the third user's image URL
-                                    isGroup: widget.isGroup,
-                                    numberOfUsers: widget.numberOfUsers
-                                ),
+                            ? (widget.groupImage.isEmpty)
+                              ? (int.parse(widget.numberOfUsers) > 2)
+                                ? SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Positioned(
+                                    left: 23, // Third image position, slightly moved to the right
+                                    child: CacheImage(
+                                        imageUrl: widget.userImage3, // Change this to the third user's image URL
+                                        isGroup: widget.isGroup,
+                                        numberOfUsers: widget.numberOfUsers
+                                    ),
+                                  ),
+                                  Positioned(
+                                    left: 13, // Second image position, slightly moved to the right
+                                    child: CacheImage(
+                                        imageUrl: widget.userImage2, // Change this to the second user's image URL
+                                        isGroup: widget.isGroup,
+                                        numberOfUsers: widget.numberOfUsers
+                                    ),
+                                  ),
+                                  Positioned(
+                                    left: 0, // First image position
+                                    child: CacheImage(
+                                        imageUrl: widget.userImage, // Change this to the first user's image URL
+                                        isGroup: widget.isGroup,
+                                        numberOfUsers: widget.numberOfUsers
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Positioned(
-                                left: 13, // Second image position, slightly moved to the right
-                                child: CacheImage(
-                                    imageUrl: widget.userImage2, // Change this to the second user's image URL
-                                    isGroup: widget.isGroup,
-                                    numberOfUsers: widget.numberOfUsers
-                                ),
+                            )//Three people image
+                                : SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Positioned(
+                                    left: -3,
+                                    top: -3,
+                                    child: CacheImage(
+                                        imageUrl: widget.userImage,
+                                        isGroup: widget.isGroup,
+                                        numberOfUsers: widget.numberOfUsers),
+                                  ),
+                                  Positioned(
+                                    right: -3,
+                                    bottom: -3,
+                                    child: CacheImage(
+                                      imageUrl: widget.userImage2,
+                                      isGroup: widget.isGroup,
+                                      numberOfUsers: widget.numberOfUsers,),
+                                  ),
+                                ],
                               ),
-                              Positioned(
-                                left: 0, // First image position
-                                child: CacheImage(
-                                    imageUrl: widget.userImage, // Change this to the first user's image URL
-                                    isGroup: widget.isGroup,
-                                    numberOfUsers: widget.numberOfUsers
-                                ),
-                              ),
-                            ],
-                          ),
-                        )//Three people image
-                            : SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Positioned(
-                                left: -3,
-                                top: -3,
-                                child: CacheImage(
-                                    imageUrl: widget.userImage,
-                                    isGroup: widget.isGroup,
-                                    numberOfUsers: widget.numberOfUsers),
-                              ),
-                              Positioned(
-                                right: -3,
-                                bottom: -3,
-                                child: CacheImage(
-                                  imageUrl: widget.userImage2,
-                                  isGroup: widget.isGroup,
-                                  numberOfUsers: widget.numberOfUsers,),
-                              ),
-                            ],
-                          ),
-                        )//Two people image
-                            : CacheImage(numberOfUsers: "1", imageUrl: widget.groupImage, isGroup: false,) //Load this if the group has a profile image
+                            )//Two people image
+                                : CacheImage(numberOfUsers: "1", imageUrl: widget.groupImage, isGroup: false,) //Load this if the group has a profile image
                             : CacheImage(numberOfUsers: widget.numberOfUsers, imageUrl: widget.userImage, isGroup: widget.isGroup,),
                         const SizedBox(width: 15,),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(widget.name, style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
+                            Text(Extras().capitalize(widget.name), style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),),
                             const SizedBox(
                               height: 2,
                             ),
@@ -220,8 +232,8 @@ class _HomeChatState extends State<HomeChat> {
                                     ],
                                   ),
                                 ),
-                                SizedBox(
-                                  width: MediaQuery.of(context).size.width - 210,
+                                Container(
+                                  width: MediaQuery.of(context).size.width - 280,
                                   child: Text(actualMessage,
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 1,
@@ -237,7 +249,7 @@ class _HomeChatState extends State<HomeChat> {
                     ),
                     Column(
                       children: [
-                        Text(lastMessageTimeString, style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 10, fontWeight: FontWeight.w400, fontFamily: 'Inter'),),
+                        Text((widget.lastMessage == '') ? '' : lastMessageTimeString, style: TextStyle(color: Theme.of(context).colorScheme.scrim, fontSize: 10, fontWeight: FontWeight.w400, fontFamily: 'Inter'),),
                         const SizedBox(height: 5),
                         Visibility(
                           visible: widget.isPinned,

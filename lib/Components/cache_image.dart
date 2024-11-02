@@ -13,20 +13,6 @@ class CacheImage extends StatelessWidget {
   final bool isGroup;
   final String numberOfUsers;
 
-
-  void onImageLoadFailed(error) {
-    String errorMessage = '';
-    if (error is SocketException) {
-      errorMessage = 'Check your network connection. Profile Images failed to load';
-    } else {
-      errorMessage = 'Contact our customer service. Profile Images failed to load';
-    }
-    InAppNotifications.show(
-        description: errorMessage,
-        onTap: () {}
-    );    // Place your function logic here
-  }
-
   @override
   Widget build(BuildContext context) {
     return CachedNetworkImage(
@@ -48,7 +34,7 @@ class CacheImage extends StatelessWidget {
         child: Lottie.asset('assets/lottie_animations/loading_animation.json')
       ),
       errorWidget: (context, url, error) {
-        onImageLoadFailed(error); // Call the function when image loading fails
+        // onImageLoadFailed(error); // Call the function when image loading fails
         return CircleAvatar(
             radius: (isGroup)
                 ? (int.parse(numberOfUsers) > 2)

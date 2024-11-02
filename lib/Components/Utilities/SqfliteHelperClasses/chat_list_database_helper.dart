@@ -32,9 +32,10 @@ class ChatListDatabaseHelper {
     return records.map((record) {
       return {
         'notification': record['notification'] == 1,
-        'id': record['id'],
+        'conversationId': record['conversationId'],
         'userImage': record['userImage'],
         'name': record['name'],
+        'userName': record['userName'],
         'lastMessage': record['lastMessage'],
         'lastMessageTime': record['lastMessageTime'],
         'isGroup': record['isGroup'] == 1,
@@ -43,7 +44,8 @@ class ChatListDatabaseHelper {
         'userImage3': record['userImage3'],
         'groupImage': record['groupImage'],
         'isPinned': record['isPinned'] == 1,
-        'isArchived': record['isArchived'] == 1
+        'isArchived': record['isArchived'] == 1,
+        'participantsId': record['participantsId']
       };
     }).toList();
   }
@@ -53,26 +55,25 @@ class ChatListDatabaseHelper {
     await db.update(
       'chatList',
       chat,
-      where: 'id = ?',
-      whereArgs: [chat['id']],
+      where: 'conversationId = ?',
+      whereArgs: [chat['conversationId']],
     );
   }
 
   Future<void> pinChats(Set<String> idsToUpdate) async {
-    int numberOfPinnedChats = await ChatListDatabaseHelper().getNumberOfPinnedChats();
+    int numberOfPinnedChats = await getNumberOfPinnedChats();
     final db = await database;
 
     const int maxPinnedChats = 3;
     int remainingSlots = maxPinnedChats - numberOfPinnedChats;
 
-    // Get the first few IDs from the set, up to the number of remaining slots
     List<String> idsToPin = idsToUpdate.take(remainingSlots).toList();
 
     for (String id in idsToPin) {
       await db.update(
         'chatList',
         {'isPinned': 1},
-        where: 'id = ?',
+        where: 'conversationId = ?',
         whereArgs: [id],
       );
     }
@@ -82,20 +83,18 @@ class ChatListDatabaseHelper {
     final db = await database;
 
     for (String id in idsToUnpin) {
-      // Check if the chat is currently pinned
       List<Map<String, dynamic>> result = await db.query(
         'chatList',
         columns: ['isPinned'],
-        where: 'id = ?',
+        where: 'conversationId = ?',
         whereArgs: [id],
       );
 
-      // If the chat is pinned (isPinned == 1), unpin it
       if (result.isNotEmpty && result.first['isPinned'] == 1) {
         await db.update(
           'chatList',
           {'isPinned': 0},
-          where: 'id = ?',
+          where: 'conversationId = ?',
           whereArgs: [id],
         );
       }
@@ -109,17 +108,15 @@ class ChatListDatabaseHelper {
       List<Map<String, dynamic>> result = await db.query(
         'chatList',
         columns: ['isPinned'],
-        where: 'id = ?',
+        where: 'conversationId = ?',
         whereArgs: [id],
       );
 
       if (result.isEmpty || result.first['isPinned'] == 0) {
-        // If any ID is not pinned, return false
         return false;
       }
     }
 
-    // If all IDs are pinned, return true
     return true;
   }
 
@@ -130,7 +127,7 @@ class ChatListDatabaseHelper {
       await db.update(
         'chatList',
         {'isArchived': 1},
-        where: 'id = ?',
+        where: 'conversationId = ?',
         whereArgs: [id],
       );
     }
@@ -140,20 +137,18 @@ class ChatListDatabaseHelper {
     final db = await database;
 
     for (String id in idsToUnarchive) {
-      // Check if the chat is currently archived
       List<Map<String, dynamic>> result = await db.query(
         'chatList',
         columns: ['isArchived'],
-        where: 'id = ?',
+        where: 'conversationId = ?',
         whereArgs: [id],
       );
 
-      // If the chat is archived (isArchived == 1), unarchive it
       if (result.isNotEmpty && result.first['isArchived'] == 1) {
         await db.update(
           'chatList',
           {'isArchived': 0},
-          where: 'id = ?',
+          where: 'conversationId = ?',
           whereArgs: [id],
         );
       }
@@ -171,9 +166,10 @@ class ChatListDatabaseHelper {
     return records.map((record) {
       return {
         'notification': record['notification'] == 1,
-        'id': record['id'],
+        'conversationId': record['conversationId'],
         'userImage': record['userImage'],
         'name': record['name'],
+        'userName': record['userName'],
         'lastMessage': record['lastMessage'],
         'lastMessageTime': record['lastMessageTime'],
         'isGroup': record['isGroup'] == 1,
@@ -182,7 +178,8 @@ class ChatListDatabaseHelper {
         'userImage3': record['userImage3'],
         'groupImage': record['groupImage'],
         'isPinned': false,
-        'isArchived': record['isArchived'] == 1
+        'isArchived': record['isArchived'] == 1,
+        'participantsId': record['participantsId']
       };
     }).toList();
   }
@@ -213,7 +210,7 @@ class ChatListDatabaseHelper {
     final db = await database;
     await db.delete(
       'chatList',
-      where: 'id = ?',
+      where: 'conversationId = ?',
       whereArgs: [id],
     );
   }
@@ -222,4 +219,36 @@ class ChatListDatabaseHelper {
     final db = await database;
     await db.delete('chatList');
   }
+
+  Future<int> updateConversationId(String oldConversationId, String newConversationId) async {
+    final db = await database;
+
+    return await db.update(
+      'chatList',
+      {'conversationId': newConversationId}, // Update to the new conversationId
+      where: 'conversationId = ?',
+      whereArgs: [oldConversationId],
+    );
+  }
+
+  Future<String?> getConversationIdByUserName(String userName) async {
+    final db = await database;
+
+    // Query the contactList table for a contact with the specified userName
+    final List<Map<String, dynamic>> result = await db.query(
+      'chatList',
+      columns: ['conversationId'],
+      where: 'userName = ?',
+      whereArgs: [userName],
+      limit: 1, // Limit the results to one, as we only need one match
+    );
+
+    if (result.isNotEmpty) {
+      return result.first['conversationId'] as String?;
+    } else {
+      return null;
+    }
+  }
+
 }
+

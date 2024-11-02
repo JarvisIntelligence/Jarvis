@@ -16,13 +16,13 @@ class ContactListDatabaseHelper {
     final db = await database;
 
     // Perform a join between contactList and chatList tables
-    final List<Map<String, dynamic>> records = await db.rawQuery('''
+    final List<Map<String, dynamic>> records = await db.rawQuery('''    
     SELECT cl.*, 
            ch.isPinned AS isPinned, 
            ch.isArchived AS isArchived 
     FROM contactList AS cl
     LEFT JOIN chatList AS ch 
-    ON cl.id = ch.id
+    ON cl.conversationId = ch.conversationId
     ORDER BY isPinned DESC, lastMessageTime DESC
   ''');
 
@@ -35,9 +35,11 @@ class ContactListDatabaseHelper {
         'userImage': record['userImage'],
         'userImage2': record['userImage2'],
         'name': record['name'],
+        'userName': record['userName'],
         'groupImage': record['groupImage'],
-        'id': record['id'],
+        'conversationId': record['conversationId'],
         'userBio': record['userBio'],
+        'participantsId': (record['participantsId'] as String?)?.split(',') ?? [],
         'isPinned': (record['isPinned'] as int? ?? 0) == 1,
         'isArchived': (record['isArchived'] as int? ?? 0) == 1
       };
@@ -51,20 +53,26 @@ class ContactListDatabaseHelper {
 
   Future<int> updateContact(Map<String, dynamic> contact) async {
     final db = await database;
+
+    // Convert participantsId list to a comma-separated string
+    // if (contact['participantsId'] is List<String>) {
+    //   contact['participantsId'] = (contact['participantsId'] as List<String>).join(',');
+    // }
+
     return await db.update(
       'contactList',
       contact,
-      where: 'id = ?',
-      whereArgs: [contact['id']],
+      where: 'conversationId = ?',
+      whereArgs: [contact['conversationId']],
     );
   }
 
-  Future<int> deleteContact(String id) async {
+  Future<int> deleteContact(String conversationId) async {
     final db = await database;
     return await db.delete(
       'contactList',
-      where: 'id = ?',
-      whereArgs: [id],
+      where: 'conversationId = ?',
+      whereArgs: [conversationId],
     );
   }
 
@@ -77,4 +85,17 @@ class ContactListDatabaseHelper {
     final db = await database;
     await db.execute('DROP TABLE IF EXISTS contactList');
   }
+
+  Future<int> updateConversationId(String oldConversationId, String newConversationId) async {
+    final db = await database;
+
+    return await db.update(
+      'contactList',
+      {'conversationId': newConversationId}, // Update to the new conversationId
+      where: 'conversationId = ?',
+      whereArgs: [oldConversationId],
+    );
+  }
+
 }
+
